@@ -1,0 +1,27 @@
+{
+  "name": "real_time_chat",
+  "version": "1.0.0",
+  "description": "A real time chat using websocket and nodejs",
+  "homepage": "https://github.com/franballerio/real_time_chat#readme",
+  "bugs": {
+    "url": "https://github.com/franballerio/real_time_chat/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/franballerio/real_time_chat.git"
+  },
+  "license": "ISC",
+  "author": "francisco ballerio",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node --watch ./server/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "express": "5.1.0",
+    "morgan": "1.10.1",
+    "socket.io": "4.8.1"
+  }
+}
