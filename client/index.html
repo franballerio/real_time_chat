@@ -8,22 +8,42 @@
   <script type="module">
     import { io } from 'https://cdn.socket.io/4.3.2/socket.io.esm.min.js'
 
-    const socket = io();
+    const getUsername = async () => {
+      const username = localStorage.getItem("username")
+      if (username) return username
+
+      const randomId = Math.floor(Math.random() * 10) + 1; // Get a random user from 1 to 10
+      const res = await fetch(`https://jsonplaceholder.typicode.com/users/${randomId}`)
+      const { username: randomUsername } = await res.json()
+
+      localStorage.setItem("username", randomUsername)
+      return randomUsername;
+    }
+
+    const socket = io({
+      auth: {
+        username: await getUsername(),
+        serverOffset: 0,
+       // username: getUsername()
+      }
+    });
 
     const form = document.getElementById('form')      
     const input = document.getElementById('input')
     const messages = document.getElementById('messages')      
 
-    socket.on("chat message", (msg) => {
-        const item = `<li> ${msg} </li>`
+    socket.on("chat message", (msg, serverOffset, username) => {
+        const item = `<li> ${username}: ${msg} </li>`
         messages.insertAdjacentHTML('beforeend', item)
+        socket.auth.serverOffset = serverOffset;
+        messages.scrollTop = messages.scrollHeight;
     })
 
     form.addEventListener("submit", (e) => {
         e.preventDefault()
 
         if (input.value) {
-            socket.emit("chat message", input.value);
+            socket.emit("chat message", input.value, socket.auth.username);
             input.value = '';
         }
     })
