@@ -1,14 +1,25 @@
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import cookieParser from 'cookie-parser'
+import { Server } from "socket.io"
+import { createServer } from "node:http"
+import mysql from 'mysql2/promise';
+import cors from 'cors';
+
 
 import { PORT, JWT_SECRET } from './config.js'
 import { UserDB } from './db.js'
 
 const app = express()
+app.use(cors())
 app.use(express.json())
 app.use(cookieParser())
 app.set('view engine', 'ejs')
+const http_server = createServer(app);
+const io = new Server(http_server, {
+  connectionStateRecovery: {}
+});
+
 
 app.use((req, res, next) => {
   const token = req.cookies.access_cookie
@@ -21,22 +32,19 @@ app.use((req, res, next) => {
 
   next()
 })
-
 app.get('/', (req, res) => {
   const { userData } = req.session
   if (!userData) return res.render('index')
 
   try {
-    res.render('index', userData)
+    res.redirect('/chat')
   } catch {}  
 })
-
 // users routes
 app.get('/users', (req, res) => {
   const users = UserDB.getUsers()
   res.json(users)
 })
-
 app.post('/register', async (req, res) => {
   console.log(req.body)
   const { email, user_name, password } = req.body
@@ -44,12 +52,11 @@ app.post('/register', async (req, res) => {
     // the db manager creates the user and returns the id
     const id = await UserDB.create({ email, user_name, password })
     console.log(`User created id: ${id}`)
-    res.send({ id })
+    res.render('chat', userData)
   } catch (error) {
     res.status(400).send(error.message)
   }
 })
-
 app.post('/login', async (req, res) => {
   const { userORemail, password } = req.body
   console.log(userORemail)
@@ -77,12 +84,19 @@ app.post('/login', async (req, res) => {
     res.status(401).send(error.message)
   }
 })
-
 app.get('/protected', (req, res) => {
   const { userData } = req.session
 
   if (!userData) res.status(403).send('Acces denied')
-  res.render('protected', userData)
+    res.render('chat', userData)
+})
+
+app.get('/chat', (req, res) => {
+  const { userData } = req.session
+
+  if (!userData) return res.redirect('/')
+  
+  res.render('chat', userData)
 })
 
 app.post('/logout', (req, res) => {
@@ -90,12 +104,58 @@ app.post('/logout', (req, res) => {
     .clearCookie('access_cookie')
     .json({message: 'Logout Successful'})
 })
-
 app.delete('/users', (req, res) => {
   UserDB.clear()
   res.send(200)
 })
 
-app.listen(PORT, () => {
+io.on("connection", async (socket) => {
+    console.log("Cliente conectado!")
+
+    socket.on("disconnect", () => {
+        console.log(`Client: ${socket.client} has disconnected`);
+    })
+
+    socket.on("chat message", async (msg) => {
+        // console.log(msg)
+        //let result
+        const username = socket.handshake.auth.username
+        // try {
+        //     // console.log([msg, username]);
+        //     [result] = await connection.execute("INSERT INTO chat_messages (message, user) VALUES (?, ?)", [msg, username]);
+        // }
+        // catch (error) {
+        //     console.error("Error al guardar el mensaje en la base de datos:", error);
+        //     return;
+        // }
+        // console.log("Mensaje recibido: " + msg);
+        //io.emit("chat message", msg, result.insertId.toString(), username);
+        io.emit("chat message", msg, username);
+    })
+
+    // if (!socket.recovered) {
+    //     const [result] = await connection.execute(
+    //         "SELECT * FROM chat_messages WHERE id > ?", [socket.handshake.auth.serverOffset || 0]
+    //     );
+        
+    //     result.forEach(row => {
+    //         socket.emit("chat message", row.message, row.id, row.user);
+    //     });
+    // }
+
+})
+
+
+
+
+
+
+
+
+
+
+
+
+http_server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
 })
