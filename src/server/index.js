@@ -67,7 +67,7 @@ io.on("connection", async (socket) => {
 })
 
 app.get("/", (req, res) => {
-    res.sendFile(process.cwd() + "/client/index.html")
+    res.sendFile(process.cwd() + "/src/client/index.html")  
 })
 
 http_server.listen(port, () => {

@@ -1,0 +1,23 @@
+### test user creation
+POST http://localhost:3030/register
+Content-Type: application/json
+
+{
+    "email": "fran.b@gmail.com",
+    "password":"abcde123"
+}
+
+### test login
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+    "email": "fran.b@gmail.com",
+    "password":"abcde123"
+}
+
+### drop table
+delete http://localhost:3030/users
+
+### logout 
+POST http://localhost:8080/logout
