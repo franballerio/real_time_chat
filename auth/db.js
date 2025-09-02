@@ -36,6 +36,7 @@ export class UserDB {
           password: hashedPassword
         }).save()
 
+        console.log(id)
         return id
       } else {
         throw new Error('Already registered')

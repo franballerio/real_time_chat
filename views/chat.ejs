@@ -1,22 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
   <title>Whatsapp 2</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
-        rel="stylesheet">
+  <link rel='preconnect' href='https://fonts.googleapis.com'>
+  <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+  <link href='https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap'
+        rel='stylesheet'>
   <style>
     /* Your existing CSS goes here */
     *, *::before, *::after { box-sizing: border-box; }
     :root { color-scheme: light dark; }
     body {
         margin: 0;
-        font-family: "Roboto", sans-serif;
+        font-family: 'Roboto', sans-serif;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -40,25 +40,31 @@
     #form > button:hover { background: #0cf; }
   </style>
 
-  <script type="module">
+  <script type='module'>
     import { io } from 'https://cdn.socket.io/4.3.2/socket.io.esm.min.js';
 
-    // 1. Inject server-side data into a client-side variable
-    const userData = JSON.stringify(userData || null);
-
-    // 2. Wait for the page to load before running the script
+    // Properly inject server-side userData into client-side JavaScript
+    const userData = {
+      email: '<%= email %>',
+      user_name: '<%= user_name %>'
+    };
+    
+    console.log('User data:', userData);
+    
+    // Wait for the page to load before running the script
     document.addEventListener('DOMContentLoaded', () => {
       
-      if (!userData) {
-        // If user is not logged in, redirect to the home/login page
-        window.location.href = '/';
-        return;
-      }
+      // if (!userData) {
+      //   // If user is not logged in, redirect to the home/login page
+      //   window.location.href = '/';
+      //   return;
+      // }
+
 
       const socket = io({
         auth: {
           // 3. Use the username from the injected userData object
-          username: userData.user_name,
+          user_name: userData.user_name,
           serverOffset: 0,
         }
       });
@@ -66,35 +72,53 @@
       const form = document.getElementById('form');
       const input = document.getElementById('input');
       const messages = document.getElementById('messages');
+      const logout = document.getElementById('logout');
 
-      socket.on("chat message", (msg, serverOffset, username) => {
-          const item = `<li><strong>${username}:</strong> ${msg}</li>`;
+      socket.on('chat message', (msg, user_name) => {
+          const item = `<li><strong>${user_name}:</strong> ${msg}</li>`;
           messages.insertAdjacentHTML('beforeend', item);
           socket.auth.serverOffset = serverOffset;
           messages.scrollTop = messages.scrollHeight;
       });
 
-      form.addEventListener("submit", (e) => {
+      form.addEventListener('submit', (e) => {
           e.preventDefault();
 
           if (input.value) {
               // 4. Use the authenticated username when emitting a message
-              socket.emit("chat message", input.value, userData.user_name);
+              socket.emit('chat message', input.value, userData.user_name);
+              console.log(`Mensaje enviado por ${userData.user_name}`)
               input.value = '';
           }
       });
+
+      logout.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        fetch('/logout', {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json'
+          }
+        })
+        .then(res => {
+            console.log(res)
+            window.location.href = ('/')
+        })
+      })
     });
   </script>
 </head>
 
 <body>
-  <section id="chat">
-    <ul id="messages"></ul>
-    <form id="form">
-      <input type="text" name="message" id="input" placeholder="Type a message" autocomplete="off" />
-      <button type="submit">Enviar</button>
+  <section id='chat'>
+    <ul id='messages'></ul>
+    <form id='form'>
+      <input type='text' name='message' id='input' placeholder='Type a message' autocomplete='off' />
+      <button type='submit'>Enviar</button>
     </form>
   </section>
+  <button id='logout'>logout</button>
 </body>
 
 </html>

@@ -22,17 +22,29 @@ const io = new Server(http_server, {
 
 
 app.use((req, res, next) => {
-  const token = req.cookies.access_cookie
+  console.log(req.headers)
+  // Check for token in Authorization header or cookies
+  const headerToken = req.headers['authorization']?.split(' ')[1]
+  const cookieToken = req.cookies['access_token']
+  //console.log(cookieToken)
+
+  const token = headerToken || cookieToken
+  
   req.session = { userData: null }
 
   try {
-    const data = jwt.verify(token, JWT_SECRET)
-    req.session.userData = data
+    if (token) {
+      const data = jwt.verify(token, JWT_SECRET)
+      console.log(data)
+      req.session.userData = data
+    }
   } catch {}
 
   next()
 })
+
 app.get('/', (req, res) => {
+  console.log(req.session)
   const { userData } = req.session
   if (!userData) return res.render('index')
 
@@ -45,6 +57,7 @@ app.get('/users', (req, res) => {
   const users = UserDB.getUsers()
   res.json(users)
 })
+
 app.post('/register', async (req, res) => {
   console.log(req.body)
   const { email, user_name, password } = req.body
@@ -52,15 +65,29 @@ app.post('/register', async (req, res) => {
     // the db manager creates the user and returns the id
     const id = await UserDB.create({ email, user_name, password })
     console.log(`User created id: ${id}`)
-    res.render('chat', userData)
+
+    const token = jwt.sign(
+      { id: id, email: email, user_name: user_name },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    )    
+
+    console.log({token})
+    res
+      .cookie('access_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 // 1 hour
+      })
+      .json({ token: token });
   } catch (error) {
     res.status(400).send(error.message)
   }
 })
+
 app.post('/login', async (req, res) => {
   const { userORemail, password } = req.body
-  console.log(userORemail)
-  console.log(password)
 
   try {
     const user = await UserDB.login({ userORemail, password })
@@ -72,23 +99,16 @@ app.post('/login', async (req, res) => {
     )
     console.log('User validated')
     res
-      // send the token to the client so it can resend it for auth
-      .cookie('access_cookie', token, {
+      .cookie('access_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 1000 * 60 * 60
+        maxAge: 1000 * 60 * 60 // 1 hour
       })
-      .send(user)
+      .json({ token: token })
   } catch (error) {
     res.status(401).send(error.message)
   }
-})
-app.get('/protected', (req, res) => {
-  const { userData } = req.session
-
-  if (!userData) res.status(403).send('Acces denied')
-    res.render('chat', userData)
 })
 
 app.get('/chat', (req, res) => {
@@ -96,18 +116,21 @@ app.get('/chat', (req, res) => {
 
   if (!userData) return res.redirect('/')
   
-  res.render('chat', userData)
+  console.log(userData)
+  res.render('chat', userData)  
 })
 
 app.post('/logout', (req, res) => {
   res
-    .clearCookie('access_cookie')
+    .clearCookie('access_token')
     .json({message: 'Logout Successful'})
 })
 app.delete('/users', (req, res) => {
   UserDB.clear()
   res.send(200)
 })
+
+//io.use()
 
 io.on("connection", async (socket) => {
     console.log("Cliente conectado!")
@@ -116,10 +139,9 @@ io.on("connection", async (socket) => {
         console.log(`Client: ${socket.client} has disconnected`);
     })
 
-    socket.on("chat message", async (msg) => {
+    socket.on("chat message", async (msg, user_name) => {
         // console.log(msg)
         //let result
-        const username = socket.handshake.auth.username
         // try {
         //     // console.log([msg, username]);
         //     [result] = await connection.execute("INSERT INTO chat_messages (message, user) VALUES (?, ?)", [msg, username]);
@@ -130,7 +152,7 @@ io.on("connection", async (socket) => {
         // }
         // console.log("Mensaje recibido: " + msg);
         //io.emit("chat message", msg, result.insertId.toString(), username);
-        io.emit("chat message", msg, username);
+        io.emit("chat message", msg, user_name);
     })
 
     // if (!socket.recovered) {
@@ -144,17 +166,6 @@ io.on("connection", async (socket) => {
     // }
 
 })
-
-
-
-
-
-
-
-
-
-
-
 
 http_server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)

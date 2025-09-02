@@ -152,7 +152,7 @@
                         loginSpan.innerText = 'Sesion Iniciada... Entrando...'
                         loginSpan.style.color = 'green'
                         setTimeout(() => {
-                            window.location.href = '/protected'
+                            window.location.href = '/chat'
                         }, 1200)
                     } else {
                         loginSpan.innerText = 'Error al iniciar sesion'
@@ -180,33 +180,19 @@
                 },
                 body: JSON.stringify({ email, user_name, password })
             })
-                .then(res => {
-                    console.log(res)
-                    if (res.ok) {
-                        registerSpan.innerText = 'Usuario Registrado. Entrando...'
-                        registerSpan.style.color = 'green'
-                        setTimeout(() => {
-                            fetch('/login', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({ email, password })
-                            })
-                                .then(res => {
-                                    if (res.ok) {
-                                        window.location.href = '/protected'
-                                    } else {
-                                        loginSpan.innerText = 'Error al iniciar sesion'
-                                        loginSpan.style.color = 'red'
-                                    }
-                                })
-                        }, 1200)
-                    } else {
-                        registerSpan.innerText = 'Error al registrar usuario'
-                        registerSpan.style.color = 'red'
-                    }
-                })
+            .then(async res => {
+                if (res.ok) {
+                    const data = await res.json()
+                    registerSpan.innerText = 'Usuario Registrado. Entrando...'
+                    registerSpan.style.color = 'green'
+                    setTimeout(() => {
+                        window.location.href = '/chat'
+                    }, 1200)
+                } else {
+                    registerSpan.innerText = 'Error al registrar usuario'
+                    registerSpan.style.color = 'red'
+                }
+            })
         })
 
         logoutButton?.addEventListener('click', e => {
