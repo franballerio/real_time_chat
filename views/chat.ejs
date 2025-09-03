@@ -246,9 +246,12 @@
     // Properly inject server-side userData into client-side JavaScript
     // it detects an error, but it works fine
     const userData = <%- JSON.stringify(userData) %>;
-    const users = <%- JSON.stringify(usersList) %>;
+    let connectedUsers = [];
+    let activeRoom = null
+    let activeUser = null
     console.log(userData);
-    console.log(users)
+    console.log(activeRoom)
+    console.log(activeUser)
     
     // Wait for the page to load before running the script
     document.addEventListener('DOMContentLoaded', () => {
@@ -259,40 +262,46 @@
       //   return;
       // }
 
-
-      const socket = io({
-        auth: {
-          // 3. Use the username from the injected userData object
-          user_name: userData.user_name,
-          serverOffset: 0,
-        }
-      });
-
       const form = document.getElementById('form');
       const input = document.getElementById('input');
       const messages = document.getElementById('messages');
       const logout = document.getElementById('logout');
       const usersListElement = document.getElementById('usersList');
 
-      // Check if users array exists and render users list
-      if (users && Array.isArray(users)) {
-        users.forEach(u => {
-          const listItem = document.createElement('li');
-          listItem.textContent = u.user_name;
-          console.log('Adding user:', u.user_name);
-          usersListElement.appendChild(listItem);
-        });
-      } else {
-        console.log('No users data or users is not an array:', users);
-      }
+      const socket = io({
+        auth: {
+          // 3. Use the username from the injected userData object
+          userID: userData.id,
+          user_name: userData.user_name,
+          serverOffset: 0,
+        }
+      });
+      
+      socket.onAny((event, ...args) => {
+        console.log(event, args);
+      });
 
-      socket.on('chat message', (msg, user_name) => {
+      socket.on("users", (users) => {
+        if (users) {
+          connectedUsers = users
+          renderUsers();
+        } else {
+          console.log('No users data or users is not an array:', users);
+        }
+      })
+
+      socket.on("user connected", (user) => {
+        connectedUsers.push(user)
+        //renderUsers()
+      })
+
+      socket.on('chat message', ({ content, from, to }) => {
           const listItem = document.createElement('li');
-          listItem.innerHTML = `<strong>${user_name}:</strong> ${msg}`;
+          listItem.innerHTML = `<strong>${from}:</strong> ${content}`;
           //socket.auth.serverOffset = serverOffset;
 
           // Add 'own-message' class if the message is from the current user
-          if (user_name === userData.user_name) {
+          if (from === userData.user_name) {
             listItem.classList.add('own-message');
           }
           
@@ -303,9 +312,12 @@
       form.addEventListener('submit', (e) => {
           e.preventDefault();
 
+          if (!activeRoom) {
+            throw new Error('Please select a chat')
+          }
           if (input.value) {
               // 4. Use the authenticated username when emitting a message
-              socket.emit('chat message', input.value, userData.user_name);
+              socket.emit('chat message', { msg: input.value, room: activeRoom, reciever:  activeUser } );
               input.value = '';
           }
       });
@@ -324,6 +336,41 @@
             window.location.href = ('/')
         })
       })
+
+      // Event delegation for dynamically created user elements
+      usersListElement.addEventListener('click', (e) => {
+        if (e.target.classList.contains('userChat')) {
+          e.preventDefault()
+
+          messages.innerHTML = ''
+
+          const userRecievingID = e.target.dataset.userID
+          console.log(userRecievingID)
+          console.log(userData.id)
+          const ids = [userRecievingID, userData.id]
+          ids.sort()
+          const roomID = ids.join('-')
+          activeRoom = roomID
+          activeUser = userRecievingID
+          console.log(`Chat con ${activeUser} selected. Using room ${activeRoom}`)
+
+          socket.emit('joinRoom', { room: roomID })
+        }
+      })
+
+      function renderUsers() {
+        // Clear existing users to prevent duplicates
+        usersListElement.innerHTML = '';
+        
+        connectedUsers.forEach(u => {
+          const user = document.createElement('li');
+          user.dataset.userID = u.userID
+          user.classList.add('userChat')
+          user.textContent = u.user_name;
+          console.log('Adding user:', u.user_name);
+          usersListElement.appendChild(user);
+        })
+      }
     });
   </script>
 </head>

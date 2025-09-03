@@ -37,7 +37,11 @@ export class UserDB {
         }).save()
 
         console.log(id)
-        return id
+        return {
+          id: id,
+          email: email,
+          user_name: user_name          
+        }
       } else {
         throw new Error('Already registered')
       }
@@ -70,7 +74,7 @@ export class UserDB {
         if (validPass) {
           return {
             message: 'Login Succesful',
-            _id: user._id,
+            id: user._id,
             email: user.email,
             user_name: user.user_name
           }

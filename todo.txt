@@ -1,6 +1,9 @@
 Features to add to real chat app
-- List of users to send messages to them
-- creating a broadcast
-- giving user roles
-- view the messages that i send on the right x
-- eliminate the res.json(token), it has to return id when creating or login a user
+    - List of users x
+    - create rooms to send private messages x
+    - view the messages that i send on the right x
+    - connect to a database to restore messages 
+    - creating a broadcast
+    - giving user roles
+    - eliminate the res.json(token), it has to return id when creating or login a user
+    - 

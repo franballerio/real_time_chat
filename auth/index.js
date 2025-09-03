@@ -17,7 +17,9 @@ app.use(cookieParser())
 app.set('view engine', 'ejs')
 const http_server = createServer(app);
 const io = new Server(http_server, {
-  connectionStateRecovery: {}
+  connectionStateRecovery: {},
+  // this is for allowing the client to send requests when it runs in another port
+  cors: 'http://localhost:3000'
 });
 
 
@@ -59,16 +61,15 @@ app.post('/register', async (req, res) => {
   const { email, user_name, password } = req.body
   try {
     // the db manager creates the user and returns the id
-    const id = await UserDB.create({ email, user_name, password })
-    //console.log(`User created id: ${id}`)
+    const newUser = await UserDB.create({ email, user_name, password })
+    console.log(`User created ${newUser}`)
 
     const token = jwt.sign(
-      { id: id, email: email, user_name: user_name },
-      JWT_SECRET,
+      { id: newUser.id, email: newUser.email, user_name: newUser.user_name },
+      JWT_SECRET, 
       { expiresIn: '1h' }
     )    
 
-    console.log({token})
     res
       .cookie('access_token', token, {
         httpOnly: true,
@@ -76,7 +77,7 @@ app.post('/register', async (req, res) => {
         sameSite: 'strict',
         maxAge: 1000 * 60 * 60 // 1 hour
       })
-      .json({ token: token });
+      .json({ id: id });
   } catch (error) {
     res.status(400).send(error.message)
   }
@@ -101,7 +102,7 @@ app.post('/login', async (req, res) => {
         sameSite: 'strict',
         maxAge: 1000 * 60 * 60 // 1 hour
       })
-      .json({ token: token })
+      .json({ id: user._id })
   } catch (error) {
     res.status(401).send(error.message)
   }
@@ -109,13 +110,9 @@ app.post('/login', async (req, res) => {
 
 app.get('/chat', (req, res) => {
   const { userData } = req.session
-  const users = UserDB.getUsers(userData.user_name) 
-
   if (!userData) return res.redirect('/')
 
-  
-  console.log(userData)
-  res.render('chat', { userData: userData, usersList: users })  
+  res.render('chat', { userData: userData })
 })
 
 app.post('/logout', (req, res) => {
@@ -123,21 +120,53 @@ app.post('/logout', (req, res) => {
     .clearCookie('access_token')
     .json({message: 'Logout Successful'})
 })
+
 app.delete('/users', (req, res) => {
   UserDB.clear()
   res.send(200)
 })
 
-//io.use()
+io.use((socket, next) => {
+  const username = socket.handshake.auth.user_name
+  const id = socket.handshake.auth.userID
+  if (!username) return new Error('Invalid username')
+  
+  socket.user_name = username
+  socket.userID = id
+  next()
+})
 
 io.on("connection", async (socket) => {
-    console.log("Cliente conectado!")
+    console.log(`Client: ${socket.user_name} has connected!`)
+
+    // send to all connections the new user
+    socket.broadcast.emit("user connected", {
+      userSocketID: socket.id,
+      user_name: socket.user_name,
+    });
+
+    // we send to the user, all existing users
+    const users = [];
+    for (let [id, connectedSocket] of io.of("/").sockets) {
+      if (socket.handshake.auth.user_name != connectedSocket.user_name)
+      users.push({
+        userID: connectedSocket.userID,
+        user_name: connectedSocket.user_name,
+      });
+    }
+
+    socket.emit("users", users);
 
     socket.on("disconnect", () => {
-        console.log(`Client: ${socket.client} has disconnected`);
+        console.log(`Client: ${socket.user_name} has disconnected!`);
     })
 
-    socket.on("chat message", async (msg, user_name) => {
+    socket.on('joinRoom', ({ room }) => {
+      console.log(`User ${socket.user_name, socket.userID} joining room: ${room}`)
+      socket.join(room)
+    })
+
+    socket.on("chat message", async ({ msg, room, reciever }) => {
         // console.log(msg)
         //let result
         // try {
@@ -150,7 +179,11 @@ io.on("connection", async (socket) => {
         // }
         // console.log("Mensaje recibido: " + msg);
         //io.emit("chat message", msg, result.insertId.toString(), username);
-        io.emit("chat message", msg, user_name);
+        io.to(room).emit("chat message", {
+          content: msg,
+          from: socket.user_name,
+          to: reciever
+        });
     })
 
     // if (!socket.recovered) {
