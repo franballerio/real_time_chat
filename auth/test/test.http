@@ -1,14 +1,15 @@
 ### test user creation
-POST http://localhost:3030/register
+POST http://localhost:8080/register
 Content-Type: application/json
 
 {
-    "email": "fran.b@gmail.com",
+    "email": "pedrob@gmail.com",
+    "user_name": "Pedro"
     "password":"abcde123"
 }
 
 ### test login
-POST http://localhost:3000/login
+POST http://localhost:8080/login
 Content-Type: application/json
 
 {
@@ -17,7 +18,7 @@ Content-Type: application/json
 }
 
 ### drop table
-delete http://localhost:3030/users
+delete http://localhost:8080/users
 
 ### logout 
 POST http://localhost:8080/logout

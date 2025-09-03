@@ -1,0 +1,6 @@
+When the ws recieves a connection:
+    - create a user-id-room, so the room is unique
+      also the user joins its user-role-room
+    - when a user clicks into some user chat, it joins that users id room.
+      simultaniously it disconnects from the previous room
+    - 

@@ -22,12 +22,9 @@ const io = new Server(http_server, {
 
 
 app.use((req, res, next) => {
-  console.log(req.headers)
   // Check for token in Authorization header or cookies
   const headerToken = req.headers['authorization']?.split(' ')[1]
   const cookieToken = req.cookies['access_token']
-  //console.log(cookieToken)
-
   const token = headerToken || cookieToken
   
   req.session = { userData: null }
@@ -35,7 +32,6 @@ app.use((req, res, next) => {
   try {
     if (token) {
       const data = jwt.verify(token, JWT_SECRET)
-      console.log(data)
       req.session.userData = data
     }
   } catch {}
@@ -44,7 +40,7 @@ app.use((req, res, next) => {
 })
 
 app.get('/', (req, res) => {
-  console.log(req.session)
+  //console.log(req.session)
   const { userData } = req.session
   if (!userData) return res.render('index')
 
@@ -59,12 +55,12 @@ app.get('/users', (req, res) => {
 })
 
 app.post('/register', async (req, res) => {
-  console.log(req.body)
+  //console.log(req.body)
   const { email, user_name, password } = req.body
   try {
     // the db manager creates the user and returns the id
     const id = await UserDB.create({ email, user_name, password })
-    console.log(`User created id: ${id}`)
+    //console.log(`User created id: ${id}`)
 
     const token = jwt.sign(
       { id: id, email: email, user_name: user_name },
@@ -113,11 +109,13 @@ app.post('/login', async (req, res) => {
 
 app.get('/chat', (req, res) => {
   const { userData } = req.session
+  const users = UserDB.getUsers(userData.user_name) 
 
   if (!userData) return res.redirect('/')
+
   
   console.log(userData)
-  res.render('chat', userData)  
+  res.render('chat', { userData: userData, usersList: users })  
 })
 
 app.post('/logout', (req, res) => {

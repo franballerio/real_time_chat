@@ -47,8 +47,8 @@ export class UserDB {
     }
   }
 
-  static getUsers() {
-    return User.find(user => user)
+  static getUsers(user_name) {
+    return User.find(u => u.user_name != user_name)
   }
 
   static clear() {

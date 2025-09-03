@@ -11,45 +11,244 @@
   <link href='https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap'
         rel='stylesheet'>
   <style>
-    /* Your existing CSS goes here */
     *, *::before, *::after { box-sizing: border-box; }
-    :root { color-scheme: light dark; }
+    :root { 
+      --whatsapp-green: #25D366;
+      --whatsapp-dark-green: #128C7E;
+      --whatsapp-light-green: #DCF8C6;
+      --whatsapp-gray: #f0f0f0;
+      --whatsapp-dark-gray: #303030;
+      --whatsapp-border: #e0e0e0;
+    }
+    
     body {
         margin: 0;
         font-family: 'Roboto', sans-serif;
+        background: linear-gradient(to bottom, var(--whatsapp-dark-green) 0%, var(--whatsapp-dark-green) 130px, #dddbd1 130px, #d2dbdc 100%);
+        height: 100vh;
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
-        margin: 0;
     }
-    .container {
+    
+    .app-container {
+        display: flex;
+        background: white;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        border-radius: 8px;
+        overflow: hidden;
+        width: 90vw;
+        max-width: 1200px;
+        height: 90vh;
+        position: relative;
+    }
+    
+    #chat {
+        flex: 1;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        height: 100vh;
+        background: #f7f7f7;
+        position: relative;
     }
-    #messages { list-style-type: none; margin: 0; padding: 0; overflow-y: scroll; height: 100%; scroll-behavior: smooth; padding-bottom: 48px; }
-    #messages > li { padding: .5rem 1rem; }
-    #messages > li:nth-child(odd) { background: #eee; }
-    #chat { border: 1px solid #ccc; border-radius: 8px; overflow: hidden; width: 350px; height: 80vh; position: relative; }
-    #form { bottom: 0; display: flex; height: 48px; left: 0; padding: 4px; position: absolute; right: 0; }
-    #input { border-radius: 9999px; border: 1px solid #eee; flex: 1; margin: 4px; padding: 0 8px; }
-    #input:focus { outline: 0; }
-    #form > button { background: #09f; color: #fff; border: 0; margin: 4px; border-radius: 4px; }
-    #form > button:hover { background: #0cf; }
+    
+    .chat-header {
+        background: var(--whatsapp-green);
+        color: white;
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+    }
+    
+    .chat-header h3 {
+        margin: 0;
+        font-weight: 500;
+    }
+    
+        #messages { 
+        list-style-type: none; 
+        margin: 0; 
+        padding: 20px; 
+        overflow-y: auto; 
+        height: 100%; 
+        scroll-behavior: smooth; 
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="0.5" fill="%23f0f0f0" opacity="0.3"/><circle cx="75" cy="75" r="0.5" fill="%23f0f0f0" opacity="0.3"/></pattern></defs><rect width="100" height="100" fill="%23e5ddd5"/><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #messages > li { 
+        padding: 8px 12px; 
+        margin: 5px 0;
+        background: white;
+        border-radius: 12px;
+        max-width: 70%;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        position: relative;
+        word-wrap: break-word;
+        align-self: flex-start;
+    }
+    
+    #messages > li.own-message { 
+        background: var(--whatsapp-light-green);
+        align-self: flex-end;
+    }
+    
+    #messages > li { 
+        padding: 8px 12px; 
+        margin: 5px 0;
+        background: white;
+        border-radius: 12px;
+        max-width: 70%;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        position: relative;
+        word-wrap: break-word;
+    }
+    
+    #messages > li:nth-child { 
+        background: var(--whatsapp-light-green);
+        align-self: flex-end;
+        margin-left: auto;
+    }
+    
+    #form { 
+        background: #f0f0f0;
+        display: flex; 
+        height: 60px; 
+        padding: 10px; 
+        align-items: center;
+        border-top: 1px solid var(--whatsapp-border);
+    }
+    
+    #input { 
+        border-radius: 20px; 
+        border: 1px solid var(--whatsapp-border); 
+        flex: 1; 
+        margin-right: 10px; 
+        padding: 12px 20px; 
+        font-size: 14px;
+        background: white;
+        outline: none;
+    }
+    
+    #input:focus { 
+        border-color: var(--whatsapp-green);
+    }
+    
+    #form > button { 
+        background: var(--whatsapp-green); 
+        color: white; 
+        border: 0; 
+        padding: 12px 20px;
+        border-radius: 20px; 
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+    
+    #form > button:hover { 
+        background: var(--whatsapp-dark-green); 
+    }
+    
+    .sidebar {
+        width: 300px;
+        background: white;
+        border-left: 1px solid var(--whatsapp-border);
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .sidebar-header {
+        background: var(--whatsapp-gray);
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--whatsapp-border);
+    }
+    
+    .sidebar-header h3 {
+        margin: 0;
+        color: var(--whatsapp-dark-gray);
+        font-size: 16px;
+        font-weight: 500;
+    }
+    
+    #usersList {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        flex: 1;
+        overflow-y: auto;
+    }
+    
+    #usersList li {
+        padding: 15px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+    }
+    
+    #usersList li:hover {
+        background: #f5f5f5;
+    }
+    
+    #usersList li::before {
+        content: '👤';
+        margin-right: 12px;
+        font-size: 18px;
+    }
+    
+    #logout {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: #ff4757;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 500;
+        box-shadow: 0 2px 10px rgba(255, 71, 87, 0.3);
+        transition: all 0.2s;
+        z-index: 1000;
+    }
+    
+    #logout:hover {
+        background: #ff3838;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
+    }
+    
+    @media (max-width: 768px) {
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            border-radius: 0;
+        }
+        
+        .sidebar {
+            width: 250px;
+        }
+        
+        #logout {
+            bottom: 15px;
+            right: 15px;
+            padding: 10px 16px;
+        }
+    }
   </style>
 
   <script type='module'>
     import { io } from 'https://cdn.socket.io/4.3.2/socket.io.esm.min.js';
 
     // Properly inject server-side userData into client-side JavaScript
-    const userData = {
-      email: '<%= email %>',
-      user_name: '<%= user_name %>'
-    };
-    
-    console.log('User data:', userData);
+    // it detects an error, but it works fine
+    const userData = <%- JSON.stringify(userData) %>;
+    const users = <%- JSON.stringify(usersList) %>;
+    console.log(userData);
+    console.log(users)
     
     // Wait for the page to load before running the script
     document.addEventListener('DOMContentLoaded', () => {
@@ -73,11 +272,31 @@
       const input = document.getElementById('input');
       const messages = document.getElementById('messages');
       const logout = document.getElementById('logout');
+      const usersListElement = document.getElementById('usersList');
+
+      // Check if users array exists and render users list
+      if (users && Array.isArray(users)) {
+        users.forEach(u => {
+          const listItem = document.createElement('li');
+          listItem.textContent = u.user_name;
+          console.log('Adding user:', u.user_name);
+          usersListElement.appendChild(listItem);
+        });
+      } else {
+        console.log('No users data or users is not an array:', users);
+      }
 
       socket.on('chat message', (msg, user_name) => {
-          const item = `<li><strong>${user_name}:</strong> ${msg}</li>`;
-          messages.insertAdjacentHTML('beforeend', item);
-          socket.auth.serverOffset = serverOffset;
+          const listItem = document.createElement('li');
+          listItem.innerHTML = `<strong>${user_name}:</strong> ${msg}`;
+          //socket.auth.serverOffset = serverOffset;
+
+          // Add 'own-message' class if the message is from the current user
+          if (user_name === userData.user_name) {
+            listItem.classList.add('own-message');
+          }
+          
+          messages.appendChild(listItem);
           messages.scrollTop = messages.scrollHeight;
       });
 
@@ -87,7 +306,6 @@
           if (input.value) {
               // 4. Use the authenticated username when emitting a message
               socket.emit('chat message', input.value, userData.user_name);
-              console.log(`Mensaje enviado por ${userData.user_name}`)
               input.value = '';
           }
       });
@@ -111,14 +329,27 @@
 </head>
 
 <body>
-  <section id='chat'>
-    <ul id='messages'></ul>
-    <form id='form'>
-      <input type='text' name='message' id='input' placeholder='Type a message' autocomplete='off' />
-      <button type='submit'>Enviar</button>
-    </form>
-  </section>
-  <button id='logout'>logout</button>
+  <div class="app-container">
+    <section id='chat'>
+      <div class="chat-header">
+        <h3>Chat Room</h3>
+      </div>
+      <ul id='messages'></ul>
+      <form id='form'>
+        <input type='text' name='message' id='input' placeholder='Type a message...' autocomplete='off' />
+        <button type='submit'>Send</button>
+      </form>
+    </section>
+    
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h3>Online Users</h3>
+      </div>
+      <ul id="usersList"></ul>
+    </div>
+  </div>
+  
+  <button id='logout'>Logout</button>
 </body>
 
 </html>
