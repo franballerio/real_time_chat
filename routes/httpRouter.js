@@ -1,16 +1,20 @@
-import router from 'express'
+import { Router } from 'express'; // Use Router from express
+import { httpController } from '../controllers/httpController.js'; // Make sure the path is correct and add .js
 
-import { controller } from ''
+// This is a "factory function" for your router
+export const createHttpRouter = ({ dbModel }) => {
+  const httpRouter = Router();
+  
+  // The controller is now created inside the function, where dbModel exists
+  const controller = new httpController({ dbModel });
 
-export const httpRouter = router()
-// we get the dbModel from the app creation
-const controller = new controller({ dbModel })
+  httpRouter.get('/', controller.home);
+  httpRouter.get('/chat', controller.chat);
+  httpRouter.post('/register', controller.register);
+  httpRouter.post('/login', controller.login);
+  httpRouter.post('/logout', controller.logout);
+  httpRouter.get('/users', controller.users); // Changed from delete to get for clarity
+  httpRouter.delete('/clear', controller.delete); // More specific path for this action
 
-httpRouter.get('/', controller.home)
-httpRouter.get('/chat', controller.chat)
-
-httpRouter.post('/register', controller.register)
-httpRouter.post('/login', controller.login)
-httpRouter.post('/logout', controller.logout)
-
-httpRouter.delete('/users', controller.users)
+  return httpRouter;
+};

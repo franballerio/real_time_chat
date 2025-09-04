@@ -15,8 +15,26 @@ const User = Schema('User', {
   password: { type: String, required: true }
 })
 
+const Chat = Schema('Chat', {
+  _id: { type: String, required: true },
+  users: [{ type: String, ref: 'User' }],
+  createdAt: { type: Date, default: Date.now() },
+  updatedAt: { type: Date, default: Date.now() }
+})
+
+const Message = Schema('Message', {
+  _id: { type: String, required: true },
+  conversationId: { type: String, ref: 'Conversation', required: true },
+  senderId: { type: String, ref: 'User', required: true },
+  recieverId: { type: String, ref: 'User', required: true },
+  text: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now() },
+  readBy: [{ type: String, ref: 'User' }]
+})
+
 export class localDB {
-  static async create({ email, user_name, password }) {
+  
+  static async createUser({ email, user_name, password }) {
     // validate user first
     const validUser = validateRegister({ email, user_name, password })
 
@@ -64,13 +82,40 @@ export class localDB {
     const validUser = validateLogin({ credential: userORemail, password: password })
 
     if (validUser.success) {
-      const [ user ]  = User.find(u => u.user_name === userORemail || u.email === userORemail)
-      const validPassword = await bcrypt.compare(password, user.password)
-
-      if (user && validPassword) {
-        return { login: true }
+      const [user] = User.find(u => u.user_name === userORemail || u.email === userORemail)
+      
+      if (user) {
+        const validPassword = await bcrypt.compare(password, user.password)
+        if (validPassword) return { 
+          login: true,
+          id: user._id,
+          email: user.email,
+          user_name: user.user_name,
+        }
       }
     }
     throw new Error('Invalid input')
+  }
+
+  static async createChat({ room, ids }) {
+    if (Chat.findOne({ room })) return room
+    
+    Chat.create({
+      _id: room,
+      users: ids,
+    }).save()
+  }
+
+  static async newMessage({ msg, room, reciever, sender}) {
+    const newMessage = Message.create({
+      _id: crypto.randomUUID(),    // Generate a unique ID for the message
+      conversationId: room,        // Use 'room' as the conversation ID
+      senderId: sender,
+      recieverId: reciever,
+      text: msg,
+      readBy: [sender]             // Initialize 'readBy' with the sender's ID
+    }).save()
+
+    return newMessage    
   }
 }

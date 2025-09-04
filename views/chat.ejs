@@ -221,6 +221,70 @@
         box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
     }
     
+    /* Popup styles */
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .popup-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .popup {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        min-width: 300px;
+        transform: scale(0.7);
+        transition: transform 0.3s ease;
+    }
+    
+    .popup-overlay.show .popup {
+        transform: scale(1);
+    }
+    
+    .popup h3 {
+        margin: 0 0 15px 0;
+        color: var(--whatsapp-dark-gray);
+        font-size: 18px;
+    }
+    
+    .popup p {
+        margin: 0 0 20px 0;
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .popup button {
+        background: var(--whatsapp-green);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+    
+    .popup button:hover {
+        background: var(--whatsapp-dark-green);
+    }
+    
     @media (max-width: 768px) {
         .app-container {
             width: 100vw;
@@ -236,6 +300,12 @@
             bottom: 15px;
             right: 15px;
             padding: 10px 16px;
+        }
+        
+        .popup {
+            margin: 20px;
+            min-width: auto;
+            width: calc(100% - 40px);
         }
     }
   </style>
@@ -267,6 +337,8 @@
       const messages = document.getElementById('messages');
       const logout = document.getElementById('logout');
       const usersListElement = document.getElementById('usersList');
+      const popupOverlay = document.getElementById('popupOverlay');
+      const popupCloseBtn = document.getElementById('popupCloseBtn');
 
       const socket = io({
         auth: {
@@ -313,11 +385,12 @@
           e.preventDefault();
 
           if (!activeRoom) {
-            throw new Error('Please select a chat')
+            showPopup();
+            return;
           }
           if (input.value) {
               // 4. Use the authenticated username when emitting a message
-              socket.emit('chat message', { msg: input.value, room: activeRoom, reciever:  activeUser } );
+              socket.emit('chat message', { msg: input.value, room: activeRoom, reciever:  activeUser, sender: userData.id } );
               input.value = '';
           }
       });
@@ -354,9 +427,35 @@
           activeUser = userRecievingID
           console.log(`Chat con ${activeUser} selected. Using room ${activeRoom}`)
 
-          socket.emit('joinRoom', { room: roomID })
+          socket.emit('joinRoom', { room: roomID , users: ids })
         }
       })
+
+      // Popup functions
+      function showPopup() {
+        popupOverlay.classList.add('show');
+      }
+
+      function hidePopup() {
+        popupOverlay.classList.remove('show');
+      }
+
+      // Close popup when clicking the close button
+      popupCloseBtn.addEventListener('click', hidePopup);
+
+      // Close popup when clicking outside of it
+      popupOverlay.addEventListener('click', (e) => {
+        if (e.target === popupOverlay) {
+          hidePopup();
+        }
+      });
+
+      // Close popup with Escape key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && popupOverlay.classList.contains('show')) {
+          hidePopup();
+        }
+      });
 
       function renderUsers() {
         // Clear existing users to prevent duplicates
@@ -397,6 +496,15 @@
   </div>
   
   <button id='logout'>Logout</button>
+
+  <!-- Popup for "Please select a chat" -->
+  <div id="popupOverlay" class="popup-overlay">
+    <div class="popup">
+      <h3>No Chat Selected</h3>
+      <p>Please select a user from the sidebar to start chatting.</p>
+      <button id="popupCloseBtn">OK</button>
+    </div>
+  </div>
 </body>
 
 </html>
