@@ -1,0 +1,32 @@
+import express from 'express'
+import cookieParser from 'cookie-parser'
+import { Server } from "socket.io"
+import { createServer } from "node:http"
+import cors from 'cors';
+
+import { PORT } from '../config.js'
+import { httpRouter } from './routes/httpRouter.js';
+import { jwtGet } from './middlewares/JWT.js';
+
+export const app = ({ dbModel }) => {
+    const app = express()
+    app.use(cors())
+    app.use(express.json())
+    app.use(jwtGet())
+    app.use(cookieParser())
+    app.set('view engine', 'ejs')
+    app.disable('x-powered-by')
+    
+    const http_server = createServer(app);
+    const io = new Server(http_server, {
+      connectionStateRecovery: {},
+      // this is for allowing the client to send requests when it runs in another port
+      cors: 'http://localhost:3000'
+    });
+
+    app.use('/', httpRouter({ dbModel }))
+    
+    http_server.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`)
+    })
+}

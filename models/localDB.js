@@ -1,9 +1,9 @@
 import DBlocal from 'db-local'
 import bcrypt from 'bcrypt'
 
-import { SALT_ROUNDS } from './config.js'
-import { validateRegister } from './schemas/userRegister.js'
-import { validateLogin } from './schemas/userLogin.js'
+import { SALT_ROUNDS } from '../config.js'
+import { validateRegister } from '../schemas/userRegister.js'
+import { validateLogin } from '../schemas/userLogin.js'
 // import { z } from 'zod'
 
 const { Schema } = new DBlocal({ path: './db' })
@@ -15,12 +15,12 @@ const User = Schema('User', {
   password: { type: String, required: true }
 })
 
-export class UserDB {
+export class localDB {
   static async create({ email, user_name, password }) {
     // validate user first
     const validUser = validateRegister({ email, user_name, password })
 
-    console.log(validUser)
+    //console.log(validUser)
 
     if (validUser.success) {
       const existentEmail = User.findOne({ email })
@@ -61,31 +61,16 @@ export class UserDB {
 
   static async login({ userORemail, password }) {
 
-    const validUser = validateLogin({ 
-      credential: userORemail,
-      password: password 
-    })
+    const validUser = validateLogin({ credential: userORemail, password: password })
 
     if (validUser.success) {
       const [ user ]  = User.find(u => u.user_name === userORemail || u.email === userORemail)
+      const validPassword = await bcrypt.compare(password, user.password)
 
-      if (user) {
-        const validPass = await bcrypt.compare(password, user.password)
-        if (validPass) {
-          return {
-            message: 'Login Succesful',
-            id: user._id,
-            email: user.email,
-            user_name: user.user_name
-          }
-        } else {
-          throw new Error('Invalid Credentials')
-        }
-      } else {
-        throw new Error('Invalid Credentials')
+      if (user && validPassword) {
+        return { login: true }
       }
-    } else {
-      throw new Error('Invalid input')
     }
+    throw new Error('Invalid input')
   }
 }
