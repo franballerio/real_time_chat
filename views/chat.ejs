@@ -362,10 +362,10 @@
         }
       })
 
-      socket.on("user connected", (user) => {
-        connectedUsers.push(user)
-        //renderUsers()
-      })
+      // socket.on("user connected", (user) => {
+      //   connectedUsers.push(user)
+      //   //renderUsers()
+      // })
 
       socket.on('chat message', ({ content, from, to }) => {
           const listItem = document.createElement('li');
@@ -390,7 +390,7 @@
           }
           if (input.value) {
               // 4. Use the authenticated username when emitting a message
-              socket.emit('chat message', { msg: input.value, room: activeRoom, reciever:  activeUser, sender: userData.id } );
+              socket.emit('chat message', { msg: input.value, room: activeRoom, reciever:  activeUser } );
               input.value = '';
           }
       });

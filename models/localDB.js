@@ -7,7 +7,7 @@ import { validateLogin } from '../schemas/userLogin.js'
 // import { z } from 'zod'
 
 const { Schema } = new DBlocal({ path: './db' })
-// this is the local database, is like a create table
+
 const User = Schema('User', {
   _id: { type: String, required: true },
   user_name: { type: String, required: true, unique: true},
@@ -18,17 +18,17 @@ const User = Schema('User', {
 const Chat = Schema('Chat', {
   _id: { type: String, required: true },
   users: [{ type: String, ref: 'User' }],
-  createdAt: { type: Date, default: Date.now() },
-  updatedAt: { type: Date, default: Date.now() }
+  createdAt: { type: Date },
+  updatedAt: { type: Date }
 })
 
 const Message = Schema('Message', {
   _id: { type: String, required: true },
-  conversationId: { type: String, ref: 'Conversation', required: true },
+  chatId: { type: String, ref: 'Chat', required: true },
   senderId: { type: String, ref: 'User', required: true },
   recieverId: { type: String, ref: 'User', required: true },
   text: { type: String, required: true },
-  createdAt: { type: Date, default: Date.now() },
+  createdAt: { type: Date },
   readBy: [{ type: String, ref: 'User' }]
 })
 
@@ -97,25 +97,48 @@ export class localDB {
     throw new Error('Invalid input')
   }
 
-  static async createChat({ room, ids }) {
-    if (Chat.findOne({ room })) return room
-    
-    Chat.create({
-      _id: room,
-      users: ids,
-    }).save()
+  static async createChat({ room, users }) {
+    try {
+      const existentChat = Chat.findOne({ _id: room })
+      const now = new Date().toISOString()
+
+      if (!existentChat) {
+        Chat.create({
+          _id: room,
+          users: users,
+          createdAt: now,
+          updatedAt: now
+        }).save()
+        console.log(`Chat created: ${room}`)
+      } else {
+        console.log(`Chat already exists: ${room}`)
+      }
+      return room
+    } catch (error) {
+      console.error('Error creating chat:', error)
+      throw error
+    }
   }
 
   static async newMessage({ msg, room, reciever, sender}) {
+    try {
+      const msgId = crypto.randomUUID()
+
     const newMessage = Message.create({
-      _id: crypto.randomUUID(),    // Generate a unique ID for the message
-      conversationId: room,        // Use 'room' as the conversation ID
+      _id: msgId,    // Generate a unique ID for the message
+      chatId: room,        // Use 'room' as the conversation ID
       senderId: sender,
       recieverId: reciever,
       text: msg,
+      createdAt: new Date().toISOString(),       // Explicitly set the createdAt date
       readBy: [sender]             // Initialize 'readBy' with the sender's ID
     }).save()
 
-    return newMessage    
+      console.log(`Message created: ${msgId}`)
+      return newMessage
+    } catch (error) {
+      console.error('Error creating message:', error)
+      throw error
+    }
   }
 }
