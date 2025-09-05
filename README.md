@@ -71,25 +71,27 @@ Follow these instructions to get a copy of the project up and running on your lo
 The application will be available at `http://localhost:8080`.
 
 ## Project Structure
+```bash
 .
-├── controllers/
+├── controllers/  
 │   ├── httpController.js   # Handles HTTP requests
 │   └── ioController.js       # Handles Socket.IO events
 ├── db/                     # Local JSON database files
-├── middlewares/
+├── middlewares/  
 │   └── JWT.js              # JWT authentication middleware
 ├── models/
 │   ├── localDB.js          # Local database logic
 │   └── sqlDB.js            # (In-progress) SQL database logic
-├── routes/
+├── routes/  
 │   └── httpRouter.js       # Defines HTTP routes
 ├── schemas/                # Zod schemas for validation
-├── views/
+├── views/  
 │   ├── chat.ejs            # Main chat page
 │   └── index.ejs           # Login/Register page
 ├── app.js                  # Express application setup
 ├── whatsapp.js             # Main application entry point
 └── package.json            # Project dependencies and scripts
+```
 
 ## API Endpoints
 
