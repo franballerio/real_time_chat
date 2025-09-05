@@ -3,7 +3,8 @@ Features to add to real chat app
     - create rooms to send private messages x
     - view the messages that i send on the right x
     - eliminate the res.json(token), it has to return id when creating or login a user x
-    - connect to a database to restore messages 
+    - connect to a database to restore messages x 
     - creating a broadcast
     - giving user roles
-    - 
+
+docker run -p 8080:8080 --name chat-app -e SALT_ROUNDS=10 -e JWT_SECRET='Dgczd6@HGjPWx4dF$ajQpSX2fUop#ue8GD2%@4L5k^iRNvm3@w$HwhQwG&9m45zbeCN^fE' -e PORT=8080  -d real_time_chat
