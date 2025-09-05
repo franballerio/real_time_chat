@@ -1,0 +1,6 @@
+we have messages and chats on a database:
+    - when a user connects to a chat, we fetch the old messages 
+    - search on messages database the messages with conversation id
+    - send all the messages to the client
+    - client has to recieve sender, content, ifReaden, timestamp
+    - 

@@ -26,6 +26,7 @@ const Message = Schema('Message', {
   _id: { type: String, required: true },
   chatId: { type: String, ref: 'Chat', required: true },
   senderId: { type: String, ref: 'User', required: true },
+  senderUsername: { type: String, ref: 'User', required: true },
   recieverId: { type: String, ref: 'User', required: true },
   text: { type: String, required: true },
   createdAt: { type: Date },
@@ -120,18 +121,19 @@ export class localDB {
     }
   }
 
-  static async newMessage({ msg, room, reciever, sender}) {
+  static async newMessage({ msg, room, reciever, sender, senderUsername }) {
     try {
       const msgId = crypto.randomUUID()
 
     const newMessage = Message.create({
-      _id: msgId,    // Generate a unique ID for the message
-      chatId: room,        // Use 'room' as the conversation ID
+      _id: msgId,    // Generate a unique Id for the message
+      chatId: room,        // Use 'room' as the conversation Id
       senderId: sender,
+      senderUsername: senderUsername,
       recieverId: reciever,
       text: msg,
       createdAt: new Date().toISOString(),       // Explicitly set the createdAt date
-      readBy: [sender]             // Initialize 'readBy' with the sender's ID
+      readBy: [sender]             // Initialize 'readBy' with the sender's Id
     }).save()
 
       console.log(`Message created: ${msgId}`)
@@ -140,5 +142,9 @@ export class localDB {
       console.error('Error creating message:', error)
       throw error
     }
+  }
+
+  static async fetchChat({ room }) {
+    return await Message.find(m => m.chatId === room)
   }
 }
