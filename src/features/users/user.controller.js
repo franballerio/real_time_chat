@@ -1,14 +1,9 @@
 import jwt from 'jsonwebtoken'
-import { JWT_SECRET } from '../config.js'
+import { JWT_SECRET } from '../../../config.js'
+import { UserService } from './user.service.js'
 
-export class httpController {
-
-  constructor({ dbModel }) {
-    this.dbModel = dbModel
-  }
-
+export class UserController {
   home = async (req, res) => {
-    //console.log(req.session)
     const { userData } = req.session
     if (!userData) return res.render('index')
 
@@ -25,12 +20,9 @@ export class httpController {
   }
 
   register = async (req, res) => {
-    //console.log(req.body)
     const { email, user_name, password } = req.body
     try {
-      // the db manager creates the user and returns the id
-      const newUser = await this.dbModel.createUser({ email, user_name, password })
-      console.log(`User created ${newUser}`)
+      const newUser = await UserService.createUser({ email, user_name, password })
 
       const token = jwt.sign(
         { id: newUser.id, email: newUser.email, user_name: newUser.user_name },
@@ -47,7 +39,7 @@ export class httpController {
         })
         .json({ id: newUser.id });
     } catch (error) {
-      res.status(400).send(error.message)
+      res.status(400).json({ "error": error.message })
     }    
   }
 
@@ -55,17 +47,14 @@ export class httpController {
     const { userORemail, password } = req.body
 
     try {
-      const user = await this.dbModel.login({ userORemail, password })
+      const user = await UserService.login({ userORemail, password })
 
       if (user.login) {
-        // create a jwtoken for session auth
         const token = jwt.sign(
           { id: user.id, email: user.email, user_name: user.user_name },
           JWT_SECRET,
           { expiresIn: '1h' }
         )
-
-        console.log(`User ${userORemail} validated`)
 
         res
           .cookie('access_token', token, {
@@ -88,12 +77,15 @@ export class httpController {
   }
 
   users = async (req, res) => {
-    const users = this.dbModel.getUsers()
+    const { userData } = req.session
+    if (!userData) return res.redirect('/')
+
+    const users = UserService.getUsers(userData.user_name)
     res.json(users)
   }
 
   delete = async (req, res) => {
-    this.dbModel.clear()
+    UserService.clear()
     res.send(200)    
   }
 }

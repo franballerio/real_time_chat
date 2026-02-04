@@ -5,11 +5,11 @@ import { createServer } from "node:http"
 import cors from 'cors';
 
 import { PORT } from './config.js'
-import { createHttpRouter } from './routes/httpRouter.js';
-import { ioController } from './controllers/ioController.js'
-import { jwtGet } from './middlewares/JWT.js';
+import { createApiRouter } from './src/routes/index.js'
+import { chatHandler } from './src/features/chat/chat.handler.js'
+import { jwtGet } from './src/middlewares/JWT.js';
 
-export const app = ({ dbModel }) => {
+export const app = () => {
     const app = express()
     app.use(cors())
     app.use(express.json())
@@ -20,13 +20,12 @@ export const app = ({ dbModel }) => {
     const http_server = createServer(app);
     const io = new Server(http_server, {
       connectionStateRecovery: {},
-      // this is for allowing the client to send requests when it runs in another port
       cors: 'http://localhost:3000'
     });
     
     app.use((req, res, next) => { jwtGet(req, next) })
-    app.use('/', createHttpRouter({ dbModel }))
-    ioController({ io: io, dbModel: dbModel })
+    app.use('/', createApiRouter())
+    chatHandler({ io })
     
     http_server.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`)

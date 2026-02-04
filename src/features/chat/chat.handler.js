@@ -1,4 +1,7 @@
-export const ioController = ({ io, dbModel }) => {
+import { ChatService } from './chat.service.js'
+import { UserService } from '../users/user.service.js'
+
+export const chatHandler = ({ io }) => {
 
     io.use((socket, next) => {
         const username = socket.handshake.auth.user_name
@@ -10,17 +13,16 @@ export const ioController = ({ io, dbModel }) => {
         next()
     })
 
-
     io.on('connection', async (socket) => {
         console.log(`Client: ${socket.user_name} has connected!`)
 
-        // send to all connections the new user
+        // send all connections the new user
         socket.broadcast.emit('user connected', {
             userSocketId: socket.id,
             user_name: socket.user_name,
         });
 
-        const users = await dbModel.getUsers(socket.user_name)
+        const users = await UserService.getUsers(socket.user_name)
         socket.emit('users', users);
         
         socket.on('disconnect', () => {
@@ -32,11 +34,11 @@ export const ioController = ({ io, dbModel }) => {
                 if (!socket.rooms.has(room)) {
                     console.log(`User ${socket.userId} joining room: ${room}`)
                     
-                    const newChat = await dbModel.createChat({ room, users })
+                    const newChat = await ChatService.createChat({ room, users })
                     socket.join(room)
                 }
 
-                const chatHistory = await dbModel.fetchChat({ room })
+                const chatHistory = await ChatService.fetchChat({ room })
                 chatHistory.sort().reverse()
 
                 chatHistory.forEach(m => {
@@ -58,7 +60,7 @@ export const ioController = ({ io, dbModel }) => {
             try {
                 console.log('Received message:', { msg, room, reciever, sender: socket.userId });
                 
-                const newMessage = await dbModel.newMessage({
+                const newMessage = await ChatService.newMessage({
                     msg, 
                     room, 
                     reciever, 
@@ -80,16 +82,5 @@ export const ioController = ({ io, dbModel }) => {
                 socket.emit('error', { message: 'Failed to send message' })
             }
         })
-
-        // if (!socket.recovered) {
-        //     const [result] = await connection.execute(
-        //         'SELECT * FROM chat_messages WHERE id > ?', [socket.handshake.auth.serverOffset || 0]
-        //     );
-
-        //     result.forEach(row => {
-        //         socket.emit('chat message', row.message, row.id, row.user);
-        //     });
-        // }
-
     })
 }

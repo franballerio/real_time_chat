@@ -181,15 +181,16 @@
                 body: JSON.stringify({ email, user_name, password })
             })
             .then(async res => {
+                const data = await res.json()
                 if (res.ok) {
-                    const data = await res.json()
                     registerSpan.innerText = 'Usuario Registrado. Entrando...'
                     registerSpan.style.color = 'green'
                     setTimeout(() => {
                         window.location.href = '/chat'
                     }, 1200)
                 } else {
-                    registerSpan.innerText = 'Error al registrar usuario'
+                    console.log(data)
+                    registerSpan.innerText = `Error al registrar usuario: ${data.error[0].message}`
                     registerSpan.style.color = 'red'
                 }
             })

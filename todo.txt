@@ -8,3 +8,80 @@ Features to add to real chat app
     - giving user roles
 
 docker run -p 8080:8080 --name chat-app -e SALT_ROUNDS=10 -e JWT_SECRET='Dgczd6@HGjPWx4dF$ajQpSX2fUop#ue8GD2%@4L5k^iRNvm3@w$HwhQwG&9m45zbeCN^fE' -e PORT=8080  -d real_time_chat
+
+0. Refactor code:
+      * Goal: Modularize code to be more readable and maintanable
+      * Steps:
+         1. Separate routes and controllers
+         2. Create objects for each resource or service
+         
+
+1. Integrate RabbitMQ for a Scalable Messaging System:
+       * Goal: Decouple the real-time message handling from the
+         main application to allow for better scalability and
+         resilience.
+       * Steps:
+           1. Add amqplib as a dependency.
+           2. Create a dedicated RabbitMQ service module to manage
+              connections and channels.
+           3. Modify the chat logic (ioController.js) to publish
+              messages to a RabbitMQ exchange.
+           4. Implement a worker process that subscribes to a
+              RabbitMQ queue, processes messages, and then
+              broadcasts them to the appropriate clients via
+              Socket.IO.
+
+   2. Integrate Redis for Caching and Session Management:
+       * Goal: Improve performance by caching frequently accessed
+         data and managing user sessions efficiently.
+       * Steps:
+           1. Add the redis package as a dependency.
+           2. Create a Redis service module for managing the
+              connection.
+           3. Replace the current file-based user session storage
+              with Redis.
+           4. Cache recent chat messages in Redis to speed up
+              initial chat history loading.
+
+   3. Upgrade the Database System:
+       * Goal: Replace the current file-based database (.json
+         files) with a more robust and scalable database system.
+       * Steps:
+           1. Choose a database (e.g., PostgreSQL, MongoDB).
+           2. Set up the new database and create the necessary
+              tables/collections.
+           3. Replace the localDB.js implementation with a new data
+              access layer that interacts with the chosen database.
+              The existing sqlDB.js stub can be used as a starting
+              point if an SQL database is chosen.
+
+   4. Enhance Configuration and Secrets Management:
+       * Goal: Improve security and configuration management by
+         moving sensitive data and environment-specific settings
+         out of the codebase.
+       * Steps:
+           1. Add dotenv to manage environment variables.
+           2. Create a .env file for local development and a
+              .env.example for reference.
+           3. Move all configuration from config.js into
+              environment variables.
+
+   5. Update Docker Configuration:
+       * Goal: Add RabbitMQ and Redis as services in the Docker
+         Compose setup.
+       * Steps:
+           1. Modify compose.yaml to include services for RabbitMQ
+              and Redis.
+           2. Update the application's Dockerfile to handle the new
+              dependencies and ensure services are available on
+              startup.
+
+   6. Improve Code Quality and Maintainability:
+       * Goal: Enforce a consistent code style and add a testing
+         framework.
+       * Steps:
+           1. Add ESLint and Prettier for code linting and
+              formatting.
+           2. Add a testing framework like Jest or Mocha/Chai.
+           3. Create unit and integration tests for critical parts
+              of the application, such as controllers and services.

@@ -1,7 +1,0 @@
-node_modules
-pnpm-lock.yaml
-.env
-.gitignore
-Dockerfile
-todo.txt
-restoreChats.txt
