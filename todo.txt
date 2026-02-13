@@ -1,87 +1,105 @@
-Features to add to real chat app
-    - List of users x
-    - create rooms to send private messages x
-    - view the messages that i send on the right x
-    - eliminate the res.json(token), it has to return id when creating or login a user x
-    - connect to a database to restore messages x 
-    - creating a broadcast
-    - giving user roles
+Real-Time Chat App Roadmap
 
-docker run -p 8080:8080 --name chat-app -e SALT_ROUNDS=10 -e JWT_SECRET='Dgczd6@HGjPWx4dF$ajQpSX2fUop#ue8GD2%@4L5k^iRNvm3@w$HwhQwG&9m45zbeCN^fE' -e PORT=8080  -d real_time_chat
+Completed Features
+    - [x] List of users
+    - [x] Create rooms for private messages
+    - [x] Display own messages on the right side
+    - [x] Return user id on register/login (instead of only token)
+    - [x] Persist and restore messages from database
+    - [ ] Broadcast messages to all connected users
+    - [ ] User roles and role-based permissions
 
-0. Refactor code:
-      * Goal: Modularize code to be more readable and maintanable
-      * Steps:
-         1. Separate routes and controllers
-         2. Create objects for each resource or service
-         
+Run Container
+docker run -p 8080:8080 --name chat-app -e SALT_ROUNDS=10 -e JWT_SECRET='Dgczd6@HGjPWx4dF$ajQpSX2fUop#ue8GD2%@4L5k^iRNvm3@w$HwhQwG&9m45zbeCN^fE' -e PORT=8080 -d real_time_chat
 
-1. Integrate RabbitMQ for a Scalable Messaging System:
-       * Goal: Decouple the real-time message handling from the
-         main application to allow for better scalability and
-         resilience.
-       * Steps:
-           1. Add amqplib as a dependency.
-           2. Create a dedicated RabbitMQ service module to manage
-              connections and channels.
-           3. Modify the chat logic (ioController.js) to publish
-              messages to a RabbitMQ exchange.
-           4. Implement a worker process that subscribes to a
-              RabbitMQ queue, processes messages, and then
-              broadcasts them to the appropriate clients via
-              Socket.IO.
+0. Refactor Code Structure
+   * Goal: Modularize code to be more readable and maintainable.
+   * Steps:
+       1. Separate routes and controllers [x]
+       2. Create service/repository layers per feature [ ]
+       3. Add shared error handling and response helpers [ ]
+       4. Standardize folder/module naming conventions [ ]
 
-   2. Integrate Redis for Caching and Session Management:
-       * Goal: Improve performance by caching frequently accessed
-         data and managing user sessions efficiently.
-       * Steps:
-           1. Add the redis package as a dependency.
-           2. Create a Redis service module for managing the
-              connection.
-           3. Replace the current file-based user session storage
-              with Redis.
-           4. Cache recent chat messages in Redis to speed up
-              initial chat history loading.
+1. Migrate Database to PostgreSQL
+   * Goal: Move from JSON/file storage to PostgreSQL for reliability and scalability.
+   * Steps:
+       1. Add PostgreSQL driver and migration tool (e.g., `pg` + `knex` or `prisma`) [x]
+       2. Design schema:
+          - users (id, username, password_hash, role, created_at)
+          - rooms (id, name, type, created_by, created_at)
+          - room_members (room_id, user_id, joined_at)
+          - messages (id, room_id, sender_id, body, created_at) [x]
+       3. Create initial migrations and indexes (room_id, created_at, sender_id) [ ]
+       4. Implement repository/data-access layer for users, rooms, messages [ ]
+       5. Build one-time migration script from JSON data to PostgreSQL [ ]
+       6. Enable transactional writes for message + audit operations [ ]
+       7. Add backup/restore strategy and connection pooling config [ ]
 
-   3. Upgrade the Database System:
-       * Goal: Replace the current file-based database (.json
-         files) with a more robust and scalable database system.
-       * Steps:
-           1. Choose a database (e.g., PostgreSQL, MongoDB).
-           2. Set up the new database and create the necessary
-              tables/collections.
-           3. Replace the localDB.js implementation with a new data
-              access layer that interacts with the chosen database.
-              The existing sqlDB.js stub can be used as a starting
-              point if an SQL database is chosen.
+2. Integrate RabbitMQ (Production-Ready)
+   * Goal: Decouple messaging from Socket.IO and make delivery resilient under load.
+   * Steps:
+       1. Add `amqplib` and create a dedicated messaging module [ ]
+       2. Define topology:
+          - exchange: `chat.events` (topic, durable)
+          - queues: `chat.message.persist`, `chat.message.broadcast`
+          - routing keys: `chat.room.<roomId>`, `chat.broadcast`
+       3. Publish from API/socket layer with persistent messages and correlation ids [ ]
+       4. Add consumer workers with manual ack/nack and retry strategy [ ]
+       5. Configure dead-letter queue (DLQ) for failed messages [ ]
+       6. Add idempotency key check to avoid duplicate processing [ ]
+       7. Add reconnect/health-check logic and metrics for queue lag [ ]
 
-   4. Enhance Configuration and Secrets Management:
-       * Goal: Improve security and configuration management by
-         moving sensitive data and environment-specific settings
-         out of the codebase.
-       * Steps:
-           1. Add dotenv to manage environment variables.
-           2. Create a .env file for local development and a
-              .env.example for reference.
-           3. Move all configuration from config.js into
-              environment variables.
+3. Integrate Redis (Caching + Session + Presence)
+   * Goal: Improve latency and support scalable session/presence management.
+   * Steps:
+       1. Add `redis` package and connection service [ ]
+       2. Store sessions and token metadata in Redis [ ]
+       3. Cache recent room messages (TTL) for fast initial load [ ]
+       4. Track online users and room presence using Redis sets [ ]
+       5. Use Redis pub/sub for multi-instance Socket.IO scaling [ ]
 
-   5. Update Docker Configuration:
-       * Goal: Add RabbitMQ and Redis as services in the Docker
-         Compose setup.
-       * Steps:
-           1. Modify compose.yaml to include services for RabbitMQ
-              and Redis.
-           2. Update the application's Dockerfile to handle the new
-              dependencies and ensure services are available on
-              startup.
+4. Enhance Configuration and Secrets Management
+   * Goal: Move sensitive and environment-specific configuration out of code.
+   * Steps:
+       1. Add `dotenv` and central config validation [ ]
+       2. Create `.env`, `.env.example`, and environment-specific docs [ ]
+       3. Move all values from `config.js` to environment variables [ ]
+       4. Rotate JWT secret and avoid committing secrets to git [ ]
 
-   6. Improve Code Quality and Maintainability:
-       * Goal: Enforce a consistent code style and add a testing
-         framework.
-       * Steps:
-           1. Add ESLint and Prettier for code linting and
-              formatting.
-           2. Add a testing framework like Jest or Mocha/Chai.
-           3. Create unit and integration tests for critical parts
-              of the application, such as controllers and services.
+5. Update Docker and Compose Setup
+   * Goal: Run app and dependencies consistently in local/dev/prod-like setups.
+   * Steps:
+       1. Create/update `compose.yaml` with services: app, postgres, rabbitmq, redis [ ]
+       2. Add health checks and startup dependencies [ ]
+       3. Add named volumes for postgres and rabbitmq persistence [ ]
+       4. Add migration command on startup (or init container) [ ]
+
+6. Improve Code Quality and Test Coverage
+   * Goal: Enforce quality and prevent regressions.
+   * Steps:
+       1. Add ESLint + Prettier with scripts and pre-commit hooks [ ]
+       2. Add test framework (Jest + Supertest) [ ]
+       3. Add unit tests for services and controllers [ ]
+       4. Add integration tests for auth, rooms, and messaging flows [ ]
+       5. Add smoke tests for websocket connection and message delivery [ ]
+
+7. Feature Improvements (Recommended)
+   * Goal: Improve product quality, moderation, and user experience.
+   * Steps:
+       1. Role-based access control (`admin`, `moderator`, `user`) [ ]
+       2. Message edit/delete with audit trail [ ]
+       3. Read receipts and typing indicators [ ]
+       4. Pagination and lazy loading of room history [ ]
+       5. Upload attachments (size/type validation) [ ]
+       6. Rate limiting / anti-spam for message endpoint and socket events [ ]
+       7. Structured logging and request tracing (pino/winston + request id) [ ]
+       8. Monitoring/observability (health endpoint, metrics, alerts) [ ]
+
+8. Security Hardening (Recommended)
+   * Goal: Reduce security risk in authentication and transport.
+   * Steps:
+       1. Add helmet/cors hardening and strict input validation [ ]
+       2. Add refresh token strategy with revocation list [ ]
+       3. Hash passwords with configurable rounds and migration path [ ]
+       4. Add brute-force protection on login [ ]
+       5. Ensure HTTPS and secure cookie/session settings in production [ ]
