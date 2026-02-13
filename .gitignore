@@ -1,2 +1,5 @@
 node_modules/
 .env
+todo.txt
+pnpm-lock.yaml
+.gitignore

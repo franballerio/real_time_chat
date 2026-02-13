@@ -5,11 +5,13 @@ import { createServer } from "node:http"
 import cors from 'cors';
 
 import { PORT } from './config.js'
+import { connectDB } from './src/features/db/psql.js';
 import { createApiRouter } from './src/routes/index.js'
-import { chatHandler } from './src/features/chat/chat.handler.js'
+import { chatHandler } from './src/features/chat/io.handler.js'
 import { jwtGet } from './src/middlewares/JWT.js';
 
-export const app = () => {
+
+export const app = async () => {
     const app = express()
     app.use(cors())
     app.use(express.json())
@@ -27,6 +29,13 @@ export const app = () => {
     app.use('/', createApiRouter())
     chatHandler({ io })
     
+    try {
+      await connectDB()
+    } catch (err) {
+      console.error('Failed to start Server due to a db connection error %s', err)
+      process.exit(1)
+    }
+
     http_server.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`)
     })

@@ -2,13 +2,11 @@ import { z } from 'zod'
 
 const UserRole = z.enum(['ADMIN', 'USER', 'GUEST'])
 
-const emailSchema = z.email({ message: 'Invalid email address.' })
-const user_nameSchema = z.string().min(1).max(20)
+const email = z.email({ message: 'Invalid email address.' })
+const user_name = z.string().min(1).max(20)
 
 export const userSchema = z.object({
-
-  credential: z.union([emailSchema, user_nameSchema]),
-
+  credential: z.union([email, user_name]),
   // 🔐 IMPORTANT: This is for validation, NOT for storage.
   // You should always HASH the password before saving it to a database.
   // password: z.string()
@@ -18,7 +16,6 @@ export const userSchema = z.object({
   //   }),
   password: z.string().min(1),
   //   role: UserRole.default('USER'), // Default role to 'USER' if not provided
-
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().default(() => new Date())
 })

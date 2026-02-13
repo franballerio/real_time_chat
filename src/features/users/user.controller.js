@@ -21,9 +21,9 @@ export class UserController {
 
   register = async (req, res) => {
     const { email, user_name, password } = req.body
+    console.log('[CONTROLLER] User received:', email, user_name)
     try {
       const newUser = await UserService.createUser({ email, user_name, password })
-
       const token = jwt.sign(
         { id: newUser.id, email: newUser.email, user_name: newUser.user_name },
         JWT_SECRET, 
@@ -44,10 +44,10 @@ export class UserController {
   }
 
   login = async (req, res) => {
-    const { userORemail, password } = req.body
-
+    const { credentials, password } = req.body
+    console.log('[CONTROLLER] Received:', credentials)
     try {
-      const user = await UserService.login({ userORemail, password })
+      const user = await UserService.login({ credential: credentials, password: password })
 
       if (user.login) {
         const token = jwt.sign(
@@ -80,7 +80,7 @@ export class UserController {
     const { userData } = req.session
     if (!userData) return res.redirect('/')
 
-    const users = UserService.getUsers(userData.user_name)
+    const users = UserService.getAllUsers(userData.user_name)
     res.json(users)
   }
 
