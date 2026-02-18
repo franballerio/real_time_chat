@@ -1,35 +1,25 @@
-import { pool } from '../db/psql.js'
+import { pool } from '../../services/db.conn.js'
 
 export class ChatService {
-  static async createChat({ room, users }) {
+  static async createChat({ chat_id, users }) {
     try {
-      const existentChat = ChatRepository.findOne({ _id: room })
-      const now = new Date().toISOString()
-
-      if (!existentChat) {
-        ChatRepository.create({
-          _id: room,
-          users: users,
-          createdAt: now,
-          updatedAt: now
-        })
-        console.log(`Chat created: ${room}`)
-      } else {
-        console.log(`Chat already exists: ${room}`)
-      }
-      return room
+      const rows = await pool.query('SELECT id FROM chats WHERE _id = $1', [chat_id])
+      const existentChat = rows[0]
+      if ( existentChat ) throw new Error('Chat existed')
+      
+      await pool.query('INSERT INTO chats (_id) VALUES ($1)', [chat_id])
+      await pool.query('INSERT INTO chat_participants (chat_id, user_id) VALUES ($1, $2), ($1, $3)', [chat_id, users[0], users[1]])
     } catch (error) {
       console.error('Error creating chat:', error)
       throw error
     }
   }
 
-  static async newMessage({ msg, room, reciever, sender, senderUsername }) {
+  static async newMessage({ msg, chat_id, reciever, sender, senderUsername }) {
     try {
-      const msgId = crypto.randomUUID()
+      await pool.query('INSERT INTO messages (chat_id, sender_id, sender_username, receiver_id, text) values ($1,$2,$3,$4,$5)', [chat_id, sender, senderUsername, reciever, msg])
 
-      const newMessage = ChatRepository.createMessage({
-        _id: msgId,
+      return {
         chatId: room,
         senderId: sender,
         senderUsername: senderUsername,
@@ -37,17 +27,47 @@ export class ChatService {
         text: msg,
         createdAt: new Date().toISOString(),
         readBy: [sender]
-      })
-
-      console.log(`Message created: ${msgId}`)
-      return newMessage
+      }
     } catch (error) {
       console.error('Error creating message:', error)
       throw error
     }
   }
 
-  static async fetchChat({ room }) {
-    return await ChatRepository.findMessages(m => m.chatId === room)
+  static async fetchChat({ chat_id }) {
+    try {
+      const rows = await pool.query('SELECT id FROM chats WHERE _id = $1', [chat_id])
+      const chat = rows[0] ? rows.length > 0 : null
+      return chat
+    } catch (e) {
+      throw e
+    }
+  }
+
+  static async fetchHistory({ chat_id }) {
+    try {
+      const query = `
+      SELECT 
+        sender_id, 
+        sender_username, 
+        receiver_id, 
+        text, 
+        created_at, 
+        read_at 
+      FROM 
+        messages 
+      JOIN 
+        messages_read_status
+      ON
+        _id = message_id
+      WHERE 
+        chat_id = $1
+      `
+      const rows = await pool.query(query, [chat_id])
+      const chat = rows[0] ? rows.length > 0 : null
+      return chat
+    } catch (e) {
+      throw e
+    }
   }
 }

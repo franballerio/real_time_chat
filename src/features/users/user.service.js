@@ -1,17 +1,17 @@
 import bcrypt from 'bcrypt'
-import { SALT_ROUNDS } from '../../../config.js'
+import { SALT_ROUNDS } from '../../../app/config.js'
 import { validateRegister } from './schema.register.js'
 import { validateLogin } from './schema.login.js'
-import { pool } from '../db/psql.js'
+import { pool } from '../../services/db.conn.js'
 
 export class UserService {
 
-  static async getAllUsers(user_name) {
+  static async getAllUsers(id) {
     try {
-      const { rows } = await pool.query('SELECT * FROM users WHERE NOT user_name = $1', [user_name])
+      const { rows } = await pool.query('SELECT _id, user_name FROM users WHERE NOT _id = $1', [id])
       return rows
     } catch (e) {
-      throw new Error(e)
+      throw e
     }
   }
 
@@ -20,7 +20,7 @@ export class UserService {
       const { rows } = await pool.query('SELECT * FROM users WHERE user_name = $1', [user_name])
       return rows
     } catch (e) {
-      throw new Error(e)
+      throw e
     }
   }
 
@@ -29,7 +29,7 @@ export class UserService {
       const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email])
       return rows
     } catch (e) {
-      throw new Error(e)
+      throw e
     }
   }
 
@@ -49,7 +49,7 @@ export class UserService {
     try {
       const user = await pool.query('INSERT INTO users (_id, user_name, email, password) values ($1, $2, $3, $4)', [id, user_name, email, hashedPassword])
     } catch (e) {
-      throw new Error(e)
+      throw e
     }
  
     return {
@@ -80,7 +80,7 @@ export class UserService {
         }
     } catch (e) {
         console.log(e)
-        throw new Error(e)
+        throw e
     }
   }   
 }

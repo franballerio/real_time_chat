@@ -5,10 +5,10 @@ import { createServer } from "node:http"
 import cors from 'cors';
 
 import { PORT } from './config.js'
-import { connectDB } from './src/features/db/psql.js';
-import { createApiRouter } from './src/routes/index.js'
-import { chatHandler } from './src/features/chat/io.handler.js'
-import { jwtGet } from './src/middlewares/JWT.js';
+import { connect as connectDB } from '../src/services/db.conn.js';
+import { createRouter } from './router.js'
+import { ioHandler } from '../src/features/io/io.controller.js'
+import { jwtGet } from '../src/middlewares/JWT.js';
 
 
 export const app = async () => {
@@ -25,9 +25,9 @@ export const app = async () => {
       cors: 'http://localhost:3000'
     });
     
-    app.use((req, res, next) => { jwtGet(req, next) })
-    app.use('/', createApiRouter())
-    chatHandler({ io })
+    app.use((req, res, next) => { jwtGet(req, res, next) })
+    app.use('/', createRouter())
+    ioHandler({ io })
     
     try {
       await connectDB()

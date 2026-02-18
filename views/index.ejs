@@ -140,7 +140,7 @@
             const credentials = $('#login-email').value
             const password = $('#login-password').value
 
-            fetch('/login', {
+            fetch('/api/users/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -173,7 +173,7 @@
                 return
             }
 
-            fetch('/register', {
+            fetch('/api/users/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -198,7 +198,7 @@
 
         logoutButton?.addEventListener('click', e => {
             e.preventDefault()
-            fetch('/logout', {
+            fetch('/api/users/logout', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

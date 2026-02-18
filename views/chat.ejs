@@ -325,8 +325,8 @@
 
     // Properly inject server-side userData into client-side JavaScript
     // it detects an error, but it works fine
-    const userData = <%- JSON.stringify(userData) %>;
-    let connectedUsers = [];
+    const userData = <%- JSON.stringify( userInfo ) %>;
+    let connectedUsers = await fetch('http://localhost:8080/api/users/getAll');
     let activeRoom = null
     let activeUserRecieving = null
     console.log(userData);
@@ -335,7 +335,7 @@
     
     // Wait for the page to load before running the script
     document.addEventListener('DOMContentLoaded', () => {
-      
+      renderUsers()
       // if (!userData) {
       //   // If user is not logged in, redirect to the home/login page
       //   window.location.href = '/';
@@ -352,34 +352,44 @@
 
       const socket = io({
         auth: {
-          // 3. Use the username from the injected userData object
-          userId: userData.id,
+          // 3. Use the data from the injected userData object
+          id: userData.id,
           user_name: userData.user_name,
           serverOffset: 0,
         }
+      });
+
+      socket.on('connect', () => {
+        console.log('Socket connected:', socket.id);
+        fetchAndRenderUsers();
+      });
+
+      socket.on('connect_error', (error) => {
+        console.error('Socket connection error:', error);
+      });
+
+      socket.on('disconnect', (reason) => {
+        console.log('Socket disconnected:', reason);
       });
       
       socket.onAny((event, ...args) => {
         console.log(event, args);
       });
 
-      socket.on('users', (users) => {
-        if (users) {
-          connectedUsers = users
-          renderUsers();
-        } else {
-          console.log('No users data or users is not an array:', users);
-        }
+      socket.on('user_connected', ({ id, user_name }) => {
+        connectedUsers.concat({ id: id, user_name: user_name })
+        renderUsers()
       })
 
-      socket.on('chat message', ({ content, from, to, timestamp, readBy }) => {
+
+      socket.on('chat_message', ({ content, from, to, timestamp, readBy }) => {
           const msg = document.createElement('li');
           msg.innerHTML = `<strong>${timestamp.slice(11, 16)}</strong> ${content}`;
           //socket.auth.serverOffset = serverOffset;
 
           // Add 'own-message' class if the message is from the current user
           
-          if (from === userData.user_name || from === userData.userId) {
+          if (from === userData.user_name || from === userData.id) {
             console.log('own message')
             msg.classList.add('own-message');
           }
@@ -397,7 +407,7 @@
           }
           if (input.value) {
               // 4. Use the authenticated username when emitting a message
-              socket.emit('chat message', { msg: input.value, room: activeRoom, reciever:  activeUserRecieving } );
+              socket.emit('chat_message', { msg: input.value, room: activeRoom, reciever:  activeUserRecieving } );
               input.value = '';
           }
       });
@@ -405,7 +415,7 @@
       logout.addEventListener('click', (e) => {
         e.preventDefault();
 
-        fetch('/logout', {
+        fetch('/api/users/logout', {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json'
@@ -431,17 +441,13 @@
 
           messages.innerHTML = ''
 
-          const userRecievingId = e.target.dataset.userId
-          console.log(userRecievingId)
-          console.log(userData.id)
-          const ids = [userRecievingId, userData.id]
-          ids.sort()
-          const roomId = ids.join('-')
+          const receiver = e.target.dataset.id
+          const sender = userData.id
           activeRoom = roomId
           activeUserRecieving = userRecievingId
           console.log(`Chat con ${activeUserRecieving} selected. Using room ${activeRoom}`)
 
-          socket.emit('joinRoom', { room: roomId , users: ids })
+          socket.emit('join_room', { users: [receiver, sender] })
         }
       })
 
@@ -477,7 +483,7 @@
         
         connectedUsers.forEach(u => {
           const user = document.createElement('li');
-          user.dataset.userId = u._id
+          user.dataset.id = u.id
           user.classList.add('userChat')
           user.textContent = u.user_name;
           console.log('Adding user:', u.user_name);

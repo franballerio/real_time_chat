@@ -1,27 +1,11 @@
 import jwt from 'jsonwebtoken'
-import { JWT_SECRET } from '../../../config.js'
+import { JWT_SECRET } from '../../../app/config.js'
 import { UserService } from './user.service.js'
 
-export class UserController {
-  home = async (req, res) => {
-    const { userData } = req.session
-    if (!userData) return res.render('index')
-
-    try {
-      res.redirect('/chat')
-    } catch {}  
-  }
-
-  chat = async (req, res) => {
-    const { userData } = req.session
-    if (!userData) return res.redirect('/')
-
-    res.render('chat', { userData: userData })    
-  }
+export class UsersController {
 
   register = async (req, res) => {
     const { email, user_name, password } = req.body
-    console.log('[CONTROLLER] User received:', email, user_name)
     try {
       const newUser = await UserService.createUser({ email, user_name, password })
       const token = jwt.sign(
@@ -45,7 +29,6 @@ export class UserController {
 
   login = async (req, res) => {
     const { credentials, password } = req.body
-    console.log('[CONTROLLER] Received:', credentials)
     try {
       const user = await UserService.login({ credential: credentials, password: password })
 
@@ -80,7 +63,7 @@ export class UserController {
     const { userData } = req.session
     if (!userData) return res.redirect('/')
 
-    const users = UserService.getAllUsers(userData.user_name)
+    const users = UserService.getAllUsers(userData.id)
     res.json(users)
   }
 
