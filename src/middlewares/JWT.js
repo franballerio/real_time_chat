@@ -8,18 +8,17 @@ export const jwtGet = (req, res, next) => {
 	const token = headerToken || cookieToken
 
 	req.session = { userData: null }
+	req.session.userData = { user_id: null, user_name: null }
 
 	try {
 		if (token) {
 				const data = jwt.verify(token, JWT_SECRET)
-				req.session.userData = data
-				console.log('[JWT MIDDLEWARE] user:', req.session.userData)
-		} else {
-      req.session.userData = null
-    }
+				req.session.userData.user_id = data.id
+				req.session.userData.user_name = data.user_name
+				// console.log('[JWT MIDDLEWARE] user:', req.session.userData)
+		}
 	} catch (error) {
     // If token is invalid or expired, clear user data from session
-    req.session.userData = null
     console.error('[JWT MIDDLEWARE] Token verification failed:', error.message)
   }
 	next()

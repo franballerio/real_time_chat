@@ -9,7 +9,6 @@ export const createUserRouter = () => {
   userRouter.post('/login', controller.login)
   userRouter.post('/logout', controller.logout)
   userRouter.get('/getAll', controller.users)
-  userRouter.delete('/clear', controller.delete)
 
   return userRouter
 }

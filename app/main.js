@@ -9,34 +9,34 @@ import { connect as connectDB } from '../src/services/db.conn.js';
 import { createRouter } from './router.js'
 import { ioHandler } from '../src/features/io/io.controller.js'
 import { jwtGet } from '../src/middlewares/JWT.js';
-
+import { ChatService } from '../src/features/chat/chat.service.js'
 
 export const app = async () => {
-    const app = express()
-    app.use(cors())
-    app.use(express.json())
-    app.use(cookieParser())
-    app.set('view engine', 'ejs')
-    app.disable('x-powered-by')
-    
-    const http_server = createServer(app);
-    const io = new Server(http_server, {
-      connectionStateRecovery: {},
-      cors: 'http://localhost:3000'
-    });
-    
-    app.use((req, res, next) => { jwtGet(req, res, next) })
-    app.use('/', createRouter())
-    ioHandler({ io })
-    
-    try {
-      await connectDB()
-    } catch (err) {
-      console.error('Failed to start Server due to a db connection error %s', err)
-      process.exit(1)
-    }
+  const app = express()
+  app.use(cors())
+  app.use(express.json())
+  app.use(cookieParser())
+  app.set('view engine', 'ejs')
+  app.disable('x-powered-by')
+  
+  const http_server = createServer(app);
+  const io = new Server(http_server, {
+    connectionStateRecovery: {}
+    // cors: 'http://localhost:8080'
+  });
+  
+  app.use((req, res, next) => { jwtGet(req, res, next) })
+  app.use('/', createRouter())
+  ioHandler({ io, ChatService })
+  
+  try {
+    await connectDB()
+  } catch (err) {
+    console.error('Failed to start Server due to a db connection error %s', err)
+    process.exit(1)
+  }
 
-    http_server.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`)
-    })
+  http_server.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`)
+  })
 }

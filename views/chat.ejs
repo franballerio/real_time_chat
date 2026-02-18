@@ -325,22 +325,25 @@
 
     // Properly inject server-side userData into client-side JavaScript
     // it detects an error, but it works fine
-    const userData = <%- JSON.stringify( userInfo ) %>;
-    let connectedUsers = await fetch('http://localhost:8080/api/users/getAll');
+    try {
+      const userData = <%- JSON.stringify(userData) %>;
+      const response = await fetch('/api/users/getAll');
+      let connectedUsers = await response.json();
+      
+      console.log(userData)
+      console.log(connectedUsers)
+
+    } catch (e) {
+      console.log(e)
+      throw e
+    }
     let activeRoom = null
     let activeUserRecieving = null
-    console.log(userData);
-    console.log(activeRoom)
-    console.log(activeUserRecieving)
     
     // Wait for the page to load before running the script
     document.addEventListener('DOMContentLoaded', () => {
-      renderUsers()
-      // if (!userData) {
-      //   // If user is not logged in, redirect to the home/login page
-      //   window.location.href = '/';
-      //   return;
-      // }
+      console.log(userData)
+      console.log(connectedUsers)
 
       const form = document.getElementById('form');
       const input = document.getElementById('input');
@@ -352,8 +355,7 @@
 
       const socket = io({
         auth: {
-          // 3. Use the data from the injected userData object
-          id: userData.id,
+          user_id: userData.user_id,
           user_name: userData.user_name,
           serverOffset: 0,
         }
@@ -361,7 +363,7 @@
 
       socket.on('connect', () => {
         console.log('Socket connected:', socket.id);
-        fetchAndRenderUsers();
+        renderUsers();
       });
 
       socket.on('connect_error', (error) => {
@@ -377,7 +379,7 @@
       });
 
       socket.on('user_connected', ({ id, user_name }) => {
-        connectedUsers.concat({ id: id, user_name: user_name })
+        connectedUsers.push({ id: id, user_name: user_name })
         renderUsers()
       })
 
@@ -443,8 +445,8 @@
 
           const receiver = e.target.dataset.id
           const sender = userData.id
-          activeRoom = roomId
-          activeUserRecieving = userRecievingId
+          activeRoom = `${sender}-${receiver}`;
+          activeUserRecieving = receiver;
           console.log(`Chat con ${activeUserRecieving} selected. Using room ${activeRoom}`)
 
           socket.emit('join_room', { users: [receiver, sender] })

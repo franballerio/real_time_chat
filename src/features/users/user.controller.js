@@ -63,12 +63,7 @@ export class UsersController {
     const { userData } = req.session
     if (!userData) return res.redirect('/')
 
-    const users = UserService.getAllUsers(userData.id)
+    const users = await UserService.getAllUsers(userData.id)
     res.json(users)
-  }
-
-  delete = async (req, res) => {
-    UserService.clear()
-    res.send(200)    
   }
 }

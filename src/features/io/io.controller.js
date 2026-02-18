@@ -1,13 +1,12 @@
-import { ChatService } from '../chat/chat.service.js'
-
-export const ioHandler = ({ io }) => {
+export const ioHandler = ({ io, ChatService }) => {
 	io.use((socket, next) => {
-			const username = socket.handshake.auth.user_name
-			const id = socket.handshake.auth.id
-			if (!username) return new Error('Invalid username')
+			const user_name = socket.handshake.auth.user_name
+			const user_id = socket.handshake.auth.user_id
+			if (!user_name) return next(new Error('Invalid username'))
+			if (!user_id) return next(new Error('Invalid id'))
 
-			socket.user_name = username
-			socket.id = id
+			socket.user_name = user_name
+			socket.user_id = user_id
 			next()
 	})
 
@@ -35,7 +34,7 @@ export const ioHandler = ({ io }) => {
 						
 						// TODO: implement a chat_history event, so we can send all history at once. Client side would take care of the logic of rendering history
 						chatHistory.forEach(m => {
-								io.to(room).emit('chat message', {
+								io.to(chat_id).emit('chat message', {
 									content: m.text,
 									from: m.sender_username,
 									to: m.receiver_id,
@@ -43,10 +42,9 @@ export const ioHandler = ({ io }) => {
 									read_at: m?.read_at || null
 								});                    
 						});
-						return
+					} else {
+						await ChatService.createChat({ chat_id, users })
 					}
-					
-					await ChatService.createChat({ chat_id, users })
 					socket.join(chat_id)
 					return
 				} catch (error) {
@@ -55,20 +53,20 @@ export const ioHandler = ({ io }) => {
 				}
 			})
 
-			socket.on('chat_message', async ({ msg, room, reciever }) => {
+			socket.on('chat_message', async ({ msg, chat_id, reciever }) => {
 					try {
-							console.log('Received message:', { msg, room, reciever, sender: socket.id });
+							console.log('Received message:', { msg, chat_id, reciever, sender: socket.id });
 							
 							const newMessage = await ChatService.newMessage({
 									msg, 
-									room, 
+									chat_id, 
 									reciever, 
 									sender: socket.id,
 									senderUsername: socket.user_name
 							})
 							
 
-							io.to(room).emit('chat_message', {
+							io.to(chat_id).emit('chat_message', {
 									content: newMessage.text,
 									from: newMessage.senderUsername,
 									to: newMessage.recieverId,
