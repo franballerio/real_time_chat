@@ -379,8 +379,11 @@
       });
 
       socket.on('user_connected', ({ id, user_name }) => {
-        connectedUsers.push({ id: id, user_name: user_name })
-        renderUsers()
+        const exists = connectedUsers.some(u => u._id === id);
+        if (!exists) {
+          connectedUsers.push({ _id: id, user_name: user_name })
+          renderUsers()
+        }
       })
 
 
@@ -391,7 +394,7 @@
 
           // Add 'own-message' class if the message is from the current user
           
-          if (from === userData.user_name || from === userData.id) {
+          if (from === userData.user_name || from === userData.user_id) {
             console.log('own message')
             msg.classList.add('own-message');
           }
@@ -409,7 +412,7 @@
           }
           if (input.value) {
               // 4. Use the authenticated username when emitting a message
-              socket.emit('chat_message', { msg: input.value, room: activeRoom, reciever:  activeUserRecieving } );
+              socket.emit('chat_message', { msg: input.value, chat_id: activeRoom, reciever:  activeUserRecieving } );
               input.value = '';
           }
       });
@@ -444,8 +447,8 @@
           messages.innerHTML = ''
 
           const receiver = e.target.dataset.id
-          const sender = userData.id
-          activeRoom = `${sender}-${receiver}`;
+          const sender = userData.user_id
+          activeRoom = [sender, receiver].sort().join('');
           activeUserRecieving = receiver;
           console.log(`Chat con ${activeUserRecieving} selected. Using room ${activeRoom}`)
 
@@ -485,7 +488,7 @@
         
         connectedUsers.forEach(u => {
           const user = document.createElement('li');
-          user.dataset.id = u.id
+          user.dataset.id = u._id
           user.classList.add('userChat')
           user.textContent = u.user_name;
           console.log('Adding user:', u.user_name);

@@ -63,7 +63,7 @@ export class UsersController {
     const { userData } = req.session
     if (!userData) return res.redirect('/')
 
-    const users = await UserService.getAllUsers(userData.id)
+    const users = await UserService.getAllUsers(userData.user_id)
     res.json(users)
   }
 }

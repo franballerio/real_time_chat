@@ -15,7 +15,7 @@ export const ioHandler = ({ io, ChatService }) => {
 
 			// send to all connections the new user
 			socket.broadcast.emit('user_connected', {
-					id: socket.id,
+					id: socket.user_id,
 					user_name: socket.user_name,
 			});
 			
@@ -30,16 +30,16 @@ export const ioHandler = ({ io, ChatService }) => {
 					
 					if ( chat ) {
 						const chatHistory = await ChatService.fetchHistory({ chat_id })
-						chatHistory.sort().reverse()
+						chatHistory.reverse()
 						
 						// TODO: implement a chat_history event, so we can send all history at once. Client side would take care of the logic of rendering history
 						chatHistory.forEach(m => {
-								io.to(chat_id).emit('chat message', {
+								io.to(chat_id).emit('chat_message', {
 									content: m.text,
 									from: m.sender_username,
 									to: m.receiver_id,
 									timestamp: m.created_at,
-									read_at: m?.read_at || null
+									read_at: null
 								});                    
 						});
 					} else {
@@ -61,7 +61,7 @@ export const ioHandler = ({ io, ChatService }) => {
 									msg, 
 									chat_id, 
 									reciever, 
-									sender: socket.id,
+									sender: socket.user_id,
 									senderUsername: socket.user_name
 							})
 							
