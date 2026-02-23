@@ -325,177 +325,167 @@
 
     // Properly inject server-side userData into client-side JavaScript
     // it detects an error, but it works fine
-    try {
-      const userData = <%- JSON.stringify(userData) %>;
-      const response = await fetch('/api/users/getAll');
-      let connectedUsers = await response.json();
-      
-      console.log(userData)
-      console.log(connectedUsers)
-
-    } catch (e) {
-      console.log(e)
-      throw e
-    }
+    const userData = <%- JSON.stringify(userData) %>;
     let activeRoom = null
     let activeUserRecieving = null
-    
-    // Wait for the page to load before running the script
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log(userData)
-      console.log(connectedUsers)
+    let connectedUsers = []
 
-      const form = document.getElementById('form');
-      const input = document.getElementById('input');
-      const messages = document.getElementById('messages');
-      const logout = document.getElementById('logout');
-      const usersListElement = document.getElementById('usersList');
-      const popupOverlay = document.getElementById('popupOverlay');
-      const popupCloseBtn = document.getElementById('popupCloseBtn');
+    const response = await fetch('http://localhost:8080/api/users/getAll');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch users: ${response.status}`);
+    }
+    connectedUsers = await response.json()
 
-      const socket = io({
-        auth: {
-          user_id: userData.user_id,
-          user_name: userData.user_name,
-          serverOffset: 0,
-        }
-      });
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+    const logout = document.getElementById('logout');
+    const usersListElement = document.getElementById('usersList');
+    const popupOverlay = document.getElementById('popupOverlay');
+    const popupCloseBtn = document.getElementById('popupCloseBtn');
 
-      socket.on('connect', () => {
-        console.log('Socket connected:', socket.id);
-        renderUsers();
-      });
-
-      socket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
-      });
-
-      socket.on('disconnect', (reason) => {
-        console.log('Socket disconnected:', reason);
-      });
-      
-      socket.onAny((event, ...args) => {
-        console.log(event, args);
-      });
-
-      socket.on('user_connected', ({ id, user_name }) => {
-        const exists = connectedUsers.some(u => u._id === id);
-        if (!exists) {
-          connectedUsers.push({ _id: id, user_name: user_name })
-          renderUsers()
-        }
-      })
-
-
-      socket.on('chat_message', ({ content, from, to, timestamp, readBy }) => {
-          const msg = document.createElement('li');
-          msg.innerHTML = `<strong>${timestamp.slice(11, 16)}</strong> ${content}`;
-          //socket.auth.serverOffset = serverOffset;
-
-          // Add 'own-message' class if the message is from the current user
-          
-          if (from === userData.user_name || from === userData.user_id) {
-            console.log('own message')
-            msg.classList.add('own-message');
-          }
-          
-          messages.appendChild(msg);
-          messages.scrollTop = messages.scrollHeight;
-      });
-
-      form.addEventListener('submit', (e) => {
-          e.preventDefault();
-
-          if (!activeRoom) {
-            showPopup();
-            return;
-          }
-          if (input.value) {
-              // 4. Use the authenticated username when emitting a message
-              socket.emit('chat_message', { msg: input.value, chat_id: activeRoom, reciever:  activeUserRecieving } );
-              input.value = '';
-          }
-      });
-
-      logout.addEventListener('click', (e) => {
-        e.preventDefault();
-
-        fetch('/api/users/logout', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json'
-          }
-        })
-        .then(res => {
-            console.log(res)
-            window.location.href = ('/')
-        })
-      })
-
-      // Event delegation for dynamically created user elements
-      usersListElement.addEventListener('click', (e) => {
-        if (e.target.classList.contains('userChat')) {
-          e.preventDefault()
-
-          // Remove selected class from all users
-          const allUsers = usersListElement.querySelectorAll('.userChat');
-          allUsers.forEach(user => user.classList.remove('selected'));
-          
-          // Add selected class to clicked user
-          e.target.classList.add('selected');
-
-          messages.innerHTML = ''
-
-          const receiver = e.target.dataset.id
-          const sender = userData.user_id
-          activeRoom = [sender, receiver].sort().join('');
-          activeUserRecieving = receiver;
-          console.log(`Chat con ${activeUserRecieving} selected. Using room ${activeRoom}`)
-
-          socket.emit('join_room', { users: [receiver, sender] })
-        }
-      })
-
-      // Popup functions
-      function showPopup() {
-        popupOverlay.classList.add('show');
-      }
-
-      function hidePopup() {
-        popupOverlay.classList.remove('show');
-      }
-
-      // Close popup when clicking the close button
-      popupCloseBtn.addEventListener('click', hidePopup);
-
-      // Close popup when clicking outside of it
-      popupOverlay.addEventListener('click', (e) => {
-        if (e.target === popupOverlay) {
-          hidePopup();
-        }
-      });
-
-      // Close popup with Escape key
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && popupOverlay.classList.contains('show')) {
-          hidePopup();
-        }
-      });
-
-      function renderUsers() {
-        // Clear existing users to prevent duplicates
-        usersListElement.innerHTML = '';
-        
-        connectedUsers.forEach(u => {
-          const user = document.createElement('li');
-          user.dataset.id = u._id
-          user.classList.add('userChat')
-          user.textContent = u.user_name;
-          console.log('Adding user:', u.user_name);
-          usersListElement.appendChild(user);
-        })
+    const socket = io({
+      auth: {
+        user_id: userData.user_id,
+        user_name: userData.user_name,
+        serverOffset: 0,
       }
     });
+
+    socket.on('connect', () => {
+      console.log('Socket connected:', socket.id);
+      renderUsers();
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
+    });
+    
+    socket.onAny((event, ...args) => {
+      console.log(event, args);
+    });
+
+    socket.on('user_connected', ({ id, user_name }) => {
+      const exists = connectedUsers.some(u => u._id === id);
+      if (!exists) {
+        connectedUsers.push({ _id: id, user_name: user_name })
+        renderUsers()
+      }
+    })
+
+
+    socket.on('chat_message', ({ content, from, to, timestamp, readBy }) => {
+        const msg = document.createElement('li');
+        msg.innerHTML = `<strong>${timestamp.slice(11, 16)}</strong> ${content}`;
+        //socket.auth.serverOffset = serverOffset;
+
+        // Add 'own-message' class if the message is from the current user
+        
+        if (from === userData.user_name || from === userData.user_id) {
+          console.log('own message')
+          msg.classList.add('own-message');
+        }
+        
+        messages.appendChild(msg);
+        messages.scrollTop = messages.scrollHeight;
+    });
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        if (!activeRoom) {
+          showPopup();
+          return;
+        }
+        if (input.value) {
+            // 4. Use the authenticated username when emitting a message
+            socket.emit('chat_message', { msg: input.value, chat_id: activeRoom, reciever:  activeUserRecieving } );
+            input.value = '';
+        }
+    });
+
+    logout.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      fetch('/api/users/logout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+      })
+      .then(res => {
+          console.log(res)
+          window.location.href = ('/')
+      })
+    })
+
+    // Event delegation for dynamically created user elements
+    usersListElement.addEventListener('click', (e) => {
+      if (e.target.classList.contains('userChat')) {
+        e.preventDefault()
+
+        // Remove selected class from all users
+        const allUsers = usersListElement.querySelectorAll('.userChat');
+        allUsers.forEach(user => user.classList.remove('selected'));
+        
+        // Add selected class to clicked user
+        e.target.classList.add('selected');
+
+        messages.innerHTML = ''
+
+        const receiver = e.target.dataset.id
+        const sender = userData.user_id
+        activeRoom = [sender, receiver].sort().join('');
+        activeUserRecieving = receiver;
+        console.log(`Chat con ${activeUserRecieving} selected. Using room ${activeRoom}`)
+
+        socket.emit('join_room', { producer: sender, consumer: receiver })
+      }
+    })
+
+    // Popup functions
+    function showPopup() {
+      popupOverlay.classList.add('show');
+    }
+
+    function hidePopup() {
+      popupOverlay.classList.remove('show');
+    }
+
+    // Close popup when clicking the close button
+    popupCloseBtn.addEventListener('click', hidePopup);
+
+    // Close popup when clicking outside of it
+    popupOverlay.addEventListener('click', (e) => {
+      if (e.target === popupOverlay) {
+        hidePopup();
+      }
+    });
+
+    // Close popup with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && popupOverlay.classList.contains('show')) {
+        hidePopup();
+      }
+    });
+
+    function renderUsers() {
+      // Clear existing users to prevent duplicates
+      usersListElement.innerHTML = '';
+      
+      connectedUsers.forEach(u => {
+        const user = document.createElement('li');
+        user.dataset.id = u._id
+        user.classList.add('userChat')
+        user.textContent = u.user_name;
+        console.log('Adding user:', u.user_name);
+        usersListElement.appendChild(user);
+      })
+    }
   </script>
 </head>
 

@@ -1,14 +1,14 @@
 import { pool } from '../../services/db.conn.js'
 
 export class ChatService {
-  static async createChat({ chat_id, users }) {
+  static async createChat({ chat_id, producer, consumer }) {
     try {
       const { rows } = await pool.query('SELECT _id FROM chats WHERE _id = $1', [chat_id])
       const existentChat = rows[0]
       if ( existentChat ) throw new Error('Chat existed')
       
       await pool.query('INSERT INTO chats (_id) VALUES ($1)', [chat_id])
-      await pool.query('INSERT INTO chat_participants (chat_id, user_id) VALUES ($1, $2), ($1, $3)', [chat_id, users[0], users[1]])
+      await pool.query('INSERT INTO chat_participants (chat_id, user_id) VALUES ($1, $2), ($1, $3)', [chat_id, producer, consumer])
     } catch (error) {
       console.error('Error creating chat:', error)
       throw error

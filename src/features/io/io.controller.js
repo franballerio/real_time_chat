@@ -23,10 +23,10 @@ export const ioHandler = ({ io, ChatService }) => {
 				console.log(`Client: ${socket.user_name} has disconnected!`);
 			})
 
-			socket.on('join_room', async ({ users }) => {
+			socket.on('join_room', async ({ producer, consumer }) => {
 				try {
-					const chat_id = users.sort().join('')           // create a consistent chat_id with the users id so it doesnt matter which user it is
-					const chat = ChatService.fetchChat({ chat_id }) // check if there is a room created for this users
+					const chat_id = [producer, consumer].sort().join('')  // create a consistent chat_id with the users id so it doesnt matter which user it is
+					const chat = await ChatService.fetchChat({ chat_id }) 			// check if there is a room created for this users
 					
 					if ( chat ) {
 						const chatHistory = await ChatService.fetchHistory({ chat_id })
@@ -43,7 +43,7 @@ export const ioHandler = ({ io, ChatService }) => {
 								});                    
 						});
 					} else {
-						await ChatService.createChat({ chat_id, users })
+						await ChatService.createChat({ chat_id, producer, consumer })
 					}
 					socket.join(chat_id)
 					return
