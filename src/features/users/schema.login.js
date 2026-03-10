@@ -20,7 +20,7 @@ export const userSchema = z.object({
   updatedAt: z.date().default(() => new Date())
 })
 
-export function validateLogin (data) {
+export function validateLogin(data) {
   const result = userSchema.safeParse(data)
   return result
 }

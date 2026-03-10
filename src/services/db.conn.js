@@ -1,4 +1,4 @@
-import {DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER} from '../../app/config.js'
+import { DB_HOST, DB_NAME, DB_PASSWORD, DB_PORT, DB_USER } from '../../app/config.js'
 import { Pool } from 'pg'
 
 export const pool = new Pool({

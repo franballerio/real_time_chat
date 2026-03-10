@@ -16,7 +16,7 @@ docker run -p 8080:8080 --name chat-app -e SALT_ROUNDS=10 -e JWT_SECRET='Dgczd6@
    * Goal: Modularize code to be more readable and maintainable.
    * Steps:
        1. Separate routes and controllers [x]
-       2. Create service/repository layers per feature [ ]
+       2. Create service/repository layers per feature [x]
        3. Add shared error handling and response helpers [ ]
        4. Standardize folder/module naming conventions [ ]
 
@@ -61,17 +61,17 @@ docker run -p 8080:8080 --name chat-app -e SALT_ROUNDS=10 -e JWT_SECRET='Dgczd6@
 4. Enhance Configuration and Secrets Management
    * Goal: Move sensitive and environment-specific configuration out of code.
    * Steps:
-       1. Add `dotenv` and central config validation [ ]
-       2. Create `.env`, `.env.example`, and environment-specific docs [ ]
-       3. Move all values from `config.js` to environment variables [ ]
+       1. Add `dotenv` and central config validation [x]
+       2. Create `.env`, `.env.example`, and environment-specific docs [x]
+       3. Move all values from `config.js` to environment variables [x]
        4. Rotate JWT secret and avoid committing secrets to git [ ]
 
 5. Update Docker and Compose Setup
    * Goal: Run app and dependencies consistently in local/dev/prod-like setups.
    * Steps:
-       1. Create/update `compose.yaml` with services: app, postgres, rabbitmq, redis [ ]
+       1. Create/update `compose.yaml` with services: app, postgres, rabbitmq, redis [x]
        2. Add health checks and startup dependencies [ ]
-       3. Add named volumes for postgres and rabbitmq persistence [ ]
+       3. Add named volumes for postgres and rabbitmq persistence [x]
        4. Add migration command on startup (or init container) [ ]
 
 6. Improve Code Quality and Test Coverage

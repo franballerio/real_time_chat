@@ -377,6 +377,9 @@
       }
     })
 
+    socket.on('chat_history', ({ history, sender_id }) => {
+      renderChat(history)
+    });
 
     socket.on('chat_message', ({ content, from, to, timestamp, readBy }) => {
         const msg = document.createElement('li');
@@ -427,18 +430,18 @@
     usersListElement.addEventListener('click', (e) => {
       if (e.target.classList.contains('userChat')) {
         e.preventDefault()
-
         // Remove selected class from all users
         const allUsers = usersListElement.querySelectorAll('.userChat');
-        allUsers.forEach(user => user.classList.remove('selected'));
-        
+        allUsers.forEach(user => user.classList.remove('selected'));        
         // Add selected class to clicked user
         e.target.classList.add('selected');
 
-        messages.innerHTML = ''
-
         const receiver = e.target.dataset.id
         const sender = userData.user_id
+        // prevents te action when you first select the chat
+        if ( activeUserRecieving === receiver ) return
+        
+        messages.innerHTML = ''
         activeRoom = [sender, receiver].sort().join('');
         activeUserRecieving = receiver;
         console.log(`Chat con ${activeUserRecieving} selected. Using room ${activeRoom}`)
@@ -482,8 +485,32 @@
         user.dataset.id = u._id
         user.classList.add('userChat')
         user.textContent = u.user_name;
-        console.log('Adding user:', u.user_name);
         usersListElement.appendChild(user);
+      })
+    }
+
+    function renderChat(history) {
+      messages.innerHTML = ''
+      
+      history.forEach(m => {
+        let content = m.text
+        let from = m.sender_username
+        let to = m.receiver_id
+        let timestamp = m.created_at
+        let read_at = m.read_at
+    
+        const msg = document.createElement('li');
+        msg.innerHTML = `<strong>${timestamp.slice(11, 16)}</strong> ${content}`;
+        //socket.auth.serverOffset = serverOffset;
+
+        // Add 'own-message' class if the message is from the current user
+        if (from === userData.user_name || from === userData.user_id) {
+          console.log('own message')
+          msg.classList.add('own-message');
+        }
+        
+        messages.appendChild(msg);
+        messages.scrollTop = messages.scrollHeight;
       })
     }
   </script>
